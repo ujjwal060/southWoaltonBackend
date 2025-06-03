@@ -1,0 +1,8 @@
+node_modules/
+
+.env
+
+awscliv2.zip
+
+aws
+backendsouth.zip
