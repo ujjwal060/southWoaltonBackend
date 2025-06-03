@@ -28,9 +28,6 @@ const updatePassword = async (req, res, next) => {
     }
 };
 
-
-
-
 //to Create user 
 const register = async (req, res, next) => {
     try {
