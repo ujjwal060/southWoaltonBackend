@@ -31,60 +31,104 @@ const uploadToS3 = async (file) => {
 };
 
 const createBooking = async (req, res) => {
-  try {
-      const { 
-          bname, 
-          bphone, 
-          bemail, 
-          bsize, 
-          baddress, 
-          baddressh, 
-          customerDrivers 
-      } = req.body;
+    try {
+        const {
+            bname,
+            bphone,
+            bemail,
+            bsize,
+            baddress,
+            baddressh,
+            customerDrivers
+        } = req.body;
 
-      const dpolicyFile = req.files['dpolicy']?.[0];
-      const dlicenseFile = req.files['dlicense']?.[0];
+        // Validate required fields
+        if (!bname) return res.status(400).json({ message: 'Name is required' });
+        if (!bphone) return res.status(400).json({ message: 'Phone Number is required' });
+        if (!bemail) return res.status(400).json({ message: 'Email is required' });
+        if (!bsize) return res.status(400).json({ message: 'Size of cart is required' });
+        if (!baddress) return res.status(400).json({ message: 'Home Address is required' });
 
-      if (!dpolicyFile || !dlicenseFile) {
-          return res.status(400).json({ message: 'dpolicy and dlicense images are required' });
-      }
-      const dpolicyUrl = await uploadToS3(dpolicyFile);
-      const dlicenseUrl = await uploadToS3(dlicenseFile);
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(bemail)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
 
-      const parsedCustomerDrivers = JSON.parse(customerDrivers);
+        // Parse and validate customerDrivers
+        let parsedCustomerDrivers = [];
+        try {
+            parsedCustomerDrivers = JSON.parse(customerDrivers);
+        } catch (err) {
+            return res.status(400).json({ message: 'Invalid customerDrivers format' });
+        }
 
-      const updatedCustomerDrivers = parsedCustomerDrivers.map(driver => ({
-          ...driver,
-          dpolicy: dpolicyUrl,
-          dlicense: dlicenseUrl,
-          dname: driver.dname, 
-          demail: driver.demail, 
-          dphone: driver.dphone, 
-          dexperience: driver.dexperience
-      }));
+        if (!Array.isArray(parsedCustomerDrivers) || parsedCustomerDrivers.length === 0) {
+            return res.status(400).json({ message: 'At least one customer driver is required' });
+        }
 
-      const booking = new Bookform({
-          bname,
-          bphone,
-          bemail,
-          bsize,
-          baddress,
-          baddressh,
-          customerDrivers: updatedCustomerDrivers
-      });
+        const updatedCustomerDrivers = [];
+        for (let index = 0; index < parsedCustomerDrivers.length; index++) {
+            const driver = parsedCustomerDrivers[index];
+            const { dphone, demail, dname } = driver;
 
-      const savedBooking = await booking.save();
+            // Validate required fields for each driver
+            if (!dphone) return res.status(400).json({ message: `Driver Phone Number is required for driver ${index + 1}` });
+            if (!demail) return res.status(400).json({ message: `Driver Email is required for driver ${index + 1}` });
+            if (!dname) return res.status(400).json({ message: `Driver Name is required for driver ${index + 1}` });
 
-      res.status(201).json({ 
-          message: 'Booking created successfully', 
-          bookingId: savedBooking._id,
-          booking: savedBooking 
-      });
-  } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Internal Server Error', error: error.message });
-  }
+            // Validate driver email format
+            if (!emailRegex.test(demail)) {
+                return res.status(400).json({ message: `Invalid email format for driver ${index + 1}` });
+            }
+
+            // Find and upload files
+            const dpolicyFile = req.files.find(file => file.fieldname === `dpolicy[${index}]`);
+            const dlicenseFile = req.files.find(file => file.fieldname === `dlicense[${index}]`);
+
+            if (!dpolicyFile || !dlicenseFile) {
+                return res.status(400).json({ message: `Both dpolicy and dlicense files are required for driver ${index + 1}` });
+            }
+
+            const dpolicyUrl = await uploadToS3(dpolicyFile);
+            const dlicenseUrl = await uploadToS3(dlicenseFile);
+
+            updatedCustomerDrivers.push({
+                ...driver,
+                dpolicy: dpolicyUrl,
+                dlicense: dlicenseUrl,
+            });
+        }
+
+        // Create booking object
+        const booking = new Bookform({
+            bname,
+            bphone,
+            bemail,
+            bsize,
+            baddress,
+            baddressh,
+            fromAdmin: false,
+            customerDrivers: updatedCustomerDrivers,
+        });
+
+        // Save booking to the database
+        const savedBooking = await booking.save();
+
+        res.status(201).json({
+            message: 'Booking created successfully',
+            bookingId: savedBooking._id,
+            booking: savedBooking,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    }
 };
+
+
+
+
 
 // Get Booking History by User ID
 const bookingHistoryByUserId = async (req, res, next) => {
@@ -92,8 +136,10 @@ const bookingHistoryByUserId = async (req, res, next) => {
     const { page = 1, limit = 10, search = "" } = req.query; // Pagination and search query parameters
 
     try {
-        // Find payments for the user
-        const payments = await Payment.find({ userId }).select('amount bookingId reservation');
+        // Find payments for the user and sort by createdAt in descending order
+        const payments = await Payment.find({ userId })
+            .select('amount bookingId reservation')
+            .sort({ createdAt: -1 }); // Sort by newest first
 
         const filteredPayments = await Promise.all(
             payments.map(async (payment) => {
@@ -103,9 +149,9 @@ const bookingHistoryByUserId = async (req, res, next) => {
 
                 const reservationDetails = payment.reservation
                     ? await Reservation.findOne(
-                          { _id: payment.reservation },
-                          'pickdate dropdate days pickup drop vehicleId'
-                      )
+                        { _id: payment.reservation },
+                        'pickdate dropdate days pickup drop vehicleId'
+                    )
                     : null;
 
                 let vehicleDetails = null;
@@ -121,9 +167,9 @@ const bookingHistoryByUserId = async (req, res, next) => {
                     bookingDetails,
                     reservationDetails: reservationDetails
                         ? {
-                              ...reservationDetails._doc,
-                              vehicleDetails,
-                          }
+                            ...reservationDetails._doc,
+                            vehicleDetails,
+                        }
                         : null,
                 };
             })
@@ -148,14 +194,16 @@ const bookingHistoryByUserId = async (req, res, next) => {
                 total,
                 page: parseInt(page),
                 limit: parseInt(limit),
-                totalPages, // Add total pages to the response
+                totalPages,
                 data: paginatedPayments,
             })
         );
     } catch (error) {
+        console.error("Error fetching payment history:", error);
         return next(createError(500, "Error fetching payment history"));
     }
 };
+
 
 
 

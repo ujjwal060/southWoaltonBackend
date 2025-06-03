@@ -28,8 +28,33 @@ const paymentSchema = mongoose.Schema(
         amount: {
             type: String,
             require: false
+        },
+        fromAdmin: {
+            type: Boolean,
+            required: false,
+            default: false
+        },
+        paymentDetails: {
+            paymentMethod: { type: String, required: true },
+            paymentId: { type: String, required: true },
+            sessionId: { type: String, required: true },
+            paymentStatus: {
+                type: String,
+                enum: ["Pending", "Paid", "Failed"], // Ensure "Paid" is included
+                required: true,
+            },
+            transactionDetails: { type: Object },
+        },
+        paymentType: {
+            type: String,
+            enum: ["Reservation", "Final"],
+            required: false,
+        },
+        mailSent: {
+            type: Boolean,
+            required: false,
+            default: false
         }
-
     }
     , {
         timestamps: true

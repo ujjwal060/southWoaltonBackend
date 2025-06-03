@@ -9,26 +9,26 @@ const reserveSchema = mongoose.Schema(
             type: String,
             required: false
         },
-        userId:{
+        userId: {
             type: String,
             required: false
         },
-   
+
         pickdate: {
-            type: Date, 
+            type: Date,
             required: false
         },
         dropdate: {
-            type: Date, 
+            type: Date,
             required: false
         },
         days: {
             type: String,
             required: false
         },
-        vehicleId:{
-            type:String,
-            require:false,
+        vehicleId: {
+            type: String,
+            require: false,
             default: null,
         },
         transactionid: {
@@ -37,11 +37,18 @@ const reserveSchema = mongoose.Schema(
         },
         booking: {
             type: Boolean,
-            required: false  // Added required: false for consistency
+            required: false,
+            default: false
         },
         reservation: {
             type: Boolean,
-            required: false  // Added required: false for consistency
+            required: false,
+            default: false
+        },
+        fromAdmin: {
+            type: Boolean,
+            required: false,
+            default: false
         },
         accepted: {
             type: Boolean,
@@ -50,7 +57,12 @@ const reserveSchema = mongoose.Schema(
         reserveAmount: {
             type: String,
             require: false,
-            default: null, 
+            default: null,
+        },
+        vehicleAmount:{
+            type: String,
+            require: false,
+            default: null,
         }
     },
     {

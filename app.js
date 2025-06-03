@@ -1,8 +1,11 @@
 // require('dotenv').config();
 require('dotenv').config()
+require('./middleware/cronjob');
+
 const express = require('express') 
 const path = require('path');
 const mongoose = require('mongoose')
+
 // const companyLoginRoutes = require('./routes/companyLoginRoutes')
 const roleRoute = require('./routes/roleRoute')
 const authRoute = require('./routes/authRoute')

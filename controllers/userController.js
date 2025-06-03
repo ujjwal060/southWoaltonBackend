@@ -74,27 +74,6 @@ const getUser = async (req, res, next) => {
     }
 }
 
-//update user
-// const updateUser = async (req, res, next) => {
-//     try {
-//         const { id } = req.params;
-//         // const image = req.file ? `http://44.196.64.110:5001/api/user/uploads/${req.file.filename}`:null;
-//         if (req.file) {
-//             const host = req.hostname;
-//             const port = process.env.PORT || 5001;
-//             imageUrl = `${req.protocol}://${host}:${port}/uploads/${req.file.filename}`;
-//         }
-//         console.log('image', imageUrl);
-//         const updatedData = { ...req.body, image: imageUrl };
-//         const user = await User.findByIdAndUpdate(id, updatedData, { new: true });
-//         if (!user) {
-//             return next(createError(404, "User Not Found"));
-//         }
-//         return next(createSuccess(200, "User Details Updated", user));
-//     } catch (error) {
-//         return next(createError(500, "Internal Server Error1"))
-//     }
-// }
 const updateUser = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -155,20 +134,6 @@ const updateUser = async (req, res, next) => {
     }
 };
 
-
-// const updateImage = async (req, res, next) => {
-//     try{
-//         const {id} = req.params;
-//         // const image = req.file ? '/uploads/${req.file.filename}':null;
-//         const user = await User.findByIdAndUpdate(id, {image:image});
-//         if (!user) {
-//             return next(createError(404, "User Not Found"));
-//         }
-//         return next(createSuccess(200, "Image Updated",user));
-//     } catch (error) {
-//         return next(createError(500, "Internal Server Error1"))
-//     }
-// }
 
 
 //delete user
