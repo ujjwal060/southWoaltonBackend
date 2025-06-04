@@ -1,22 +1,20 @@
 const cron = require('node-cron');
-const Payment = require('../models/PaymentModel'); // Update path as needed
-const Reservation = require('../models/reserveModel'); // Update path as needed
-const emailService = require('./emailService'); // Update path as needed
+const Payment = require('../models/PaymentModel');
+const Reservation = require('../models/reserveModel');
+const emailService = require('./emailService');
 const stripeService = require("../controllers/paymentGatewayController");
 const mongoose = require('mongoose');
 const { createInvoice } = require('../middleware/freshbooksService');
 
-// Cron job to run daily at midnight
 cron.schedule('0 0 * * *', async () => {
     console.log('Cron job started:', new Date());
     try {
         const today = new Date();
         const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
 
-        const targetDateUTC = new Date(todayUTC); // Start of today
+        const targetDateUTC = new Date(todayUTC);
         const endDateUTC = new Date(todayUTC);
-        endDateUTC.setDate(todayUTC.getDate() + 21); // 21 days from today
-
+        endDateUTC.setDate(todayUTC.getDate() + 21);
     
         const payments = await Payment.find({
             paymentType: 'Reservation',
@@ -34,8 +32,8 @@ cron.schedule('0 0 * * *', async () => {
         const reservations = await Reservation.find({
             _id: { $in: reservationIds },
             pickdate: {
-                $gte: targetDateUTC, // Start of today
-                $lte: endDateUTC,    // 21 days from today
+                $gte: targetDateUTC,
+                $lte: endDateUTC,
             },
         });
        

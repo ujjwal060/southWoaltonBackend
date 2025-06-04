@@ -27,7 +27,6 @@ const getAllReservations = async (req, res) => {
     }
 };
 
-// Get a single reservation by ID
 const getReservationById = async (req, res) => {
     try {
         const reservation = await Reserve.findById(req.params.id);
@@ -40,13 +39,12 @@ const getReservationById = async (req, res) => {
     }
 };
 
-// Update a reservation
 const updateReservation = async (req, res, next) => {
     try {
         const updatedReservation = await Reserve.findByIdAndUpdate(
             req.params.id,
             req.body,
-            { new: true } // This option returns the updated document
+            { new: true } 
         );
         if (!updatedReservation) {
             return next(createError(404, "Reservation not found"))

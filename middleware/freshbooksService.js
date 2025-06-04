@@ -1,20 +1,20 @@
 const axios = require('axios');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Initialize Stripe
-
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { getConfig } = require('../config');
 
 const getFreshBooksHeaders = async () => {
     const { ensureFreshBooksToken } = require('../controllers/authController');
     const accessToken = await ensureFreshBooksToken();
     return {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
     };
-  };
+};
 
-// payment link for Damage and Balance
 
-const createStripePaymentLink = async (amount, email, paymentType,userId, bookingId,reservation,fromAdmin ) => {
+const createStripePaymentLink = async (amount, email, paymentType, userId, bookingId, reservation, fromAdmin) => {
     try {
+        const stripe = await getConfig('STRIPE_SECRET_KEY');
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
@@ -25,17 +25,17 @@ const createStripePaymentLink = async (amount, email, paymentType,userId, bookin
                             name: 'Invoice Payment',
                             description: `Payment for Invoice`,
                         },
-                        unit_amount: Math.round(amount * 100), // Amount in smallest currency unit (e.g., cents for USD)
+                        unit_amount: Math.round(amount * 100),
                     },
                     quantity: 1,
                 },
             ],
             mode: 'payment',
-            customer_email: email, // Pre-fill email in Stripe checkout
+            customer_email: email,
             success_url: `http://18.209.91.97:8133/payment-successfully?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `http://18.209.91.97:8133/cancel`,
             metadata: {
-                amount, email, paymentType,userId, bookingId,reservation,fromAdmin
+                amount, email, paymentType, userId, bookingId, reservation, fromAdmin
             },
         });
 
@@ -47,9 +47,9 @@ const createStripePaymentLink = async (amount, email, paymentType,userId, bookin
 };
 
 
-// Function to send invoice by email
 const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includePdf = false) => {
     try {
+        const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const headers = await getFreshBooksHeaders();
 
         const emailData = {
@@ -65,7 +65,7 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
         };
 
         const response = await axios.put(
-            `https://api.freshbooks.com/accounting/account/${process.env.FRESHBOOKS_ACCOUNT_ID}/invoices/invoices/${invoiceId}`,
+            `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/invoices/invoices/${invoiceId}`,
             emailData,
             { headers }
         );
@@ -87,24 +87,23 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
             throw new Error(`Invalid amount value: ${amount}`);
         }
 
-        const clientId = await getClientId(email,customerName);
+        const clientId = await getClientId(email, customerName);
         if (!clientId) {
             throw new Error('Client ID is required but missing.');
         }
-      
+
         const clientDetails = await getClientDetails(clientId);
         if (!clientDetails || !clientDetails.fname) {
             throw new Error('Client details are incomplete.');
         }
-        
-        // Combine first name and last name for the customerName
+
         const fullName = `${clientDetails.username}`;
 
 
         const headers = await getFreshBooksHeaders();
 
-        const floridaTaxRate = 0.07; // 7% tax
-        const convenienceFeeRate = 0.05; // 5% fee
+        const floridaTaxRate = 0.07;
+        const convenienceFeeRate = 0.05;
         const damageDepositBase = 250;
 
         let lines = [];
@@ -116,7 +115,7 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
             const reservationPrice = 100;
             const balanceAmount = numericAmount;
             const totalBeforeFees = reservationPrice + balanceAmount;
-            
+
             onlineConvenienceFee = totalBeforeFees * convenienceFeeRate;
             taxableAmount = totalBeforeFees + onlineConvenienceFee;
 
@@ -127,7 +126,7 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
                     qty: 1,
                     unit_cost: { amount: reservationPrice, currency: 'USD' },
                     taxName1: "Florida Tax",
-                    taxAmount1: floridaTaxRate * 100 // Assign 7% tax
+                    taxAmount1: floridaTaxRate * 100
                 },
                 {
                     name: 'Balance Amount',
@@ -135,7 +134,7 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
                     qty: 1,
                     unit_cost: { amount: balanceAmount, currency: 'USD' },
                     taxName1: "Florida Tax",
-                    taxAmount1: floridaTaxRate * 100 // Assign 7% tax
+                    taxAmount1: floridaTaxRate * 100
                 },
                 {
                     name: 'Online Convenience Fee (5%)',
@@ -157,7 +156,7 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
                     qty: 1,
                     unit_cost: { amount: damageDeposit, currency: 'USD' },
                     taxName1: "Florida Tax",
-                    taxAmount1: floridaTaxRate * 100 // Assign 7% tax
+                    taxAmount1: floridaTaxRate * 100
                 },
                 {
                     name: 'Online Convenience Fee (5%)',
@@ -172,11 +171,11 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
             customerid: clientId,
             create_date: new Date().toISOString().split('T')[0],
             lines,
-            customerName: fullName 
+            customerName: fullName
         };
 
         const response = await axios.post(
-            `https://api.freshbooks.com/accounting/account/${process.env.FRESHBOOKS_ACCOUNT_ID}/invoices/invoices`,
+            `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/invoices/invoices`,
             { invoice: invoiceData },
             { headers }
         );
@@ -210,10 +209,11 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
 
 const getClientDetails = async (clientId) => {
     try {
+        const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const headers = await getFreshBooksHeaders();
-        
+
         const response = await axios.get(
-            `https://api.freshbooks.com/accounting/account/${process.env.FRESHBOOKS_ACCOUNT_ID}/users/clients/${clientId}`,
+            `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/users/clients/${clientId}`,
             { headers }
         );
         return response.data.response.result.client || null;
@@ -224,13 +224,14 @@ const getClientDetails = async (clientId) => {
 };
 
 
-const createClient = async (email,customerName) => {
+const createClient = async (email, customerName) => {
     try {
+        const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const headers = await getFreshBooksHeaders();
 
-        const clientData = { email:email,fname: customerName };
+        const clientData = { email: email, fname: customerName };
         const response = await axios.post(
-            `https://api.freshbooks.com/accounting/account/${process.env.FRESHBOOKS_ACCOUNT_ID}/users/clients`,
+            `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/users/clients`,
             { client: clientData },
             { headers }
         );
@@ -242,65 +243,62 @@ const createClient = async (email,customerName) => {
     }
 };
 
-
-
-const getClientId = async (email,customerName) => {
+const getClientId = async (email, customerName) => {
     if (!email || typeof email !== "string") {
-      throw new Error("Invalid email provided to getClientId.");
+        throw new Error("Invalid email provided to getClientId.");
     }
-  
+
     try {
-      const headers = await getFreshBooksHeaders(); // Use admin account token
-  
-      const response = await axios.get(
-        `https://api.freshbooks.com/accounting/account/${process.env.FRESHBOOKS_ACCOUNT_ID}/users/clients`,
-        { headers }
-      );
-      const clients = response.data.response?.result?.clients || []; // Handle undefined `clients`
-  
-      // Find client by email
-      let client = clients.find(
-        (c) =>
-          c.email &&
-          typeof c.email === "string" &&
-          c.email.trim().toLowerCase() === email.trim().toLowerCase()
-      );
-      
-  
-      // If not found, create a new client
-      if (!client) {
-        const clientId = await createClient(email,customerName);
-        return clientId;
-      }
-  
-      return client.id;
+        const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
+        const headers = await getFreshBooksHeaders();
+
+        const response = await axios.get(
+            `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/users/clients`,
+            { headers }
+        );
+        const clients = response.data.response?.result?.clients || []; // Handle undefined `clients`
+
+        // Find client by email
+        let client = clients.find(
+            (c) =>
+                c.email &&
+                typeof c.email === "string" &&
+                c.email.trim().toLowerCase() === email.trim().toLowerCase()
+        );
+
+
+        // If not found, create a new client
+        if (!client) {
+            const clientId = await createClient(email, customerName);
+            return clientId;
+        }
+
+        return client.id;
     } catch (error) {
-      console.error("Error fetching client ID:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || error.message);
+        console.error("Error fetching client ID:", error.response?.data || error.message);
+        throw new Error(error.response?.data?.message || error.message);
     }
-  };
-  
-  
-  
-
-//for token/referesh/access
-
+};
 
 const exchangeAuthorizationCodeForToken = async (code) => {
+    const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
+    const FRESHBOOKS_CLIENT_SECRET = await getConfig('FRESHBOOKS_CLIENT_SECRET');
+    const FRESHBOOKS_REDIRECT_URI = await getConfig('FRESHBOOKS_REDIRECT_URI');
+
     const response = await axios.post('https://auth.freshbooks.com/oauth/token', {
         grant_type: 'authorization_code',
-        client_id: process.env.FRESHBOOKS_CLIENT_ID,
-        client_secret: process.env.FRESHBOOKS_CLIENT_SECRET,
-        redirect_uri: process.env.FRESHBOOKS_REDIRECT_URI,
+        client_id: FRESHBOOKS_ACCOUNT_ID,
+        client_secret: FRESHBOOKS_CLIENT_SECRET,
+        redirect_uri: FRESHBOOKS_REDIRECT_URI,
         code,
     });
     return response.data;
 };
 
-//record payment for reservation payment
 
-const recordPayment = async (email, amount,customerName) => {
+const recordPayment = async (email, amount, customerName) => {
     try {
+        const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         if (!email || typeof email !== "string") {
             throw new Error("Invalid email provided to recordPayment.");
         }
@@ -308,21 +306,21 @@ const recordPayment = async (email, amount,customerName) => {
             throw new Error("Invalid amount provided to recordPayment.");
         }
 
-        const clientId = await getClientId(email,customerName);
+        const clientId = await getClientId(email, customerName);
         if (!clientId) {
             throw new Error("Client ID is required but missing.");
         }
 
         const headers = await getFreshBooksHeaders();
 
-        // Fetch the invoice ID
+       
         const invoiceResponse = await axios.get(
-            `https://api.freshbooks.com/accounting/account/${process.env.FRESHBOOKS_ACCOUNT_ID}/invoices/invoices?client_id=${clientId}`,
+            `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/invoices/invoices?client_id=${clientId}`,
             { headers }
         );
 
         const invoiceId = invoiceResponse.data.response.result.invoices[0]?.invoiceid;
-    
+
         if (!invoiceId) {
             throw new Error("No invoice found for this client.");
         }
@@ -339,15 +337,15 @@ const recordPayment = async (email, amount,customerName) => {
             note: "Payment for Reservation transaction",
         };
 
-   
+
 
         const response = await axios.post(
-            `https://api.freshbooks.com/accounting/account/${process.env.FRESHBOOKS_ACCOUNT_ID}/payments/payments`,
+            `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/payments/payments`,
             { payment: paymentData },
             { headers }
         );
 
-      
+
 
         return response.data;
     } catch (error) {
@@ -355,9 +353,6 @@ const recordPayment = async (email, amount,customerName) => {
         throw new Error(error.response?.data?.message || error.message);
     }
 };
-
-
-
 
 module.exports = {
     getClientId,

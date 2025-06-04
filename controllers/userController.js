@@ -1,12 +1,13 @@
 const User = require('../models/userModel');
 
 const Role = require('../models/roleModel');
-const upload = require('../middleware/multer'); // Updated multer middleware
+const upload = require('../middleware/multer');
 const { S3, PutObjectCommand } = require('@aws-sdk/client-s3');
 const path = require('path');
 const createError = require('../middleware/error')
 const createSuccess = require('../middleware/success');
-// to update-password
+const { getConfig } = require('../config');
+
 const updatePassword = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -28,7 +29,6 @@ const updatePassword = async (req, res, next) => {
     }
 };
 
-//to Create user 
 const register = async (req, res, next) => {
     try {
         const role = await Role.find({ role: 'User' });
@@ -43,15 +43,13 @@ const register = async (req, res, next) => {
             roles: role
         })
         await newUser.save();
-        // return res.status(200).json("User Registered Successfully")
         return next(createSuccess(200, "User Registered Successfully"))
     }
     catch (error) {
-        //return res.status(500).send("Something went wrong")
         return next(createError(500, "Something went wrong"))
     }
 }
-//get users
+
 const getAllUsers = async (req, res, next) => {
     try {
         const users = await User.find();
@@ -61,7 +59,7 @@ const getAllUsers = async (req, res, next) => {
         return next(createError(500, "Internal Server Error!"))
     }
 }
-//get user
+
 const getUser = async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id);
@@ -79,22 +77,25 @@ const updateUser = async (req, res, next) => {
         const { id } = req.params;
         const { fullName, email, phoneNumber, state } = req.body;
         let imageUrl = null;
+        const AWS_S3_BUCKET_NAME = await getConfig('AWS_S3_BUCKET_NAME');
+        const AWS_REGION = await getConfig('AWS_REGION');
+        const AWS_ACCESS_KEY_ID = await getConfig('AWS_ACCESS_KEY_ID');
+        const AWS_SECRET_ACCESS_KEY = await getConfig('AWS_SECRET_ACCESS_KEY');
+
 
         if (req.file) {
-            // S3 upload parameters without ACL
             const params = {
-                Bucket: process.env.AWS_S3_BUCKET_NAME,
+                Bucket:AWS_S3_BUCKET_NAME,
                 Key: `${Date.now()}-${path.basename(req.file.originalname)}`,
                 Body: req.file.buffer,
                 ContentType: req.file.mimetype,
             };
 
-            // Initialize S3 client
             const s3 = new S3({
-                region: process.env.AWS_REGION,
+                region:AWS_REGION,
                 credentials: {
-                    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                    accessKeyId:AWS_ACCESS_KEY_ID,
+                    secretAccessKey: AWS_SECRET_ACCESS_KEY,
                 },
             });
 
@@ -102,15 +103,13 @@ const updateUser = async (req, res, next) => {
                 const command = new PutObjectCommand(params);
                 await s3.send(command);
 
-                // Construct the public URL for the uploaded image
-                imageUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`;
+                imageUrl = `https://${AWS_S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${params.Key}`;
             } catch (s3Error) {
                 console.error('S3 upload error:', s3Error);
                 return next(createError(500, "Failed to upload image to S3"));
             }
         }
 
-        // Updating user data
         const updatedData = {
             fullName,
             email,
@@ -121,7 +120,6 @@ const updateUser = async (req, res, next) => {
             updatedData.image = imageUrl;
         }
 
-        // Find and update the user
         const user = await User.findByIdAndUpdate(id, updatedData, { new: true });
         if (!user) {
             return next(createError(404, "User Not Found"));
@@ -134,9 +132,6 @@ const updateUser = async (req, res, next) => {
     }
 };
 
-
-
-//delete user
 const deleteUser = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -150,7 +145,6 @@ const deleteUser = async (req, res, next) => {
     }
 }
 
-
 module.exports = {
-    getAllUsers, getUser, deleteUser, updateUser, register,updatePassword
+    getAllUsers, getUser, deleteUser, updateUser, register, updatePassword
 }

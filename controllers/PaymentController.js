@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const Payment = require('../models/PaymentModel'); // Ensure this path is correct
+const Payment = require('../models/PaymentModel');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
 const router = express.Router();
@@ -12,8 +12,6 @@ const nodemailer = require('nodemailer');
 const stripeService = require("./paymentGatewayController");
 const emailService = require("../middleware/emailService");
 
-
-// Handler function to create and save payment info
 const PaymentInfo = async (req, res) => {
     try {
 
@@ -34,16 +32,12 @@ const PaymentInfo = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
-// Handler function to fetch all payment records
 const getAllPayments = async (req, res) => {
     try {
-        // Fetch all documents from the Payment collection
         const payments = await Payment.find();
 
-        // Send a success response with the list of payments
         res.status(200).json(payments);
     } catch (error) {
-        // Send an error response if something goes wrong
         res.status(500).json({ message: error.message });
     }
 };
@@ -52,24 +46,19 @@ const generateInvoice = async (req, res) => {
     const { paymentId } = req.params;
 
     try {
-        // Fetch the payment details by paymentId
         const payment = await Payment.findById(paymentId);
 
         if (!payment) {
             return res.status(404).json({ message: 'Payment not found' });
         }
 
-        // Create a new PDF document
         const doc = new PDFDocument();
 
-        // Set headers for the response
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=invoice-${paymentId}.pdf`);
 
-        // Pipe the PDF stream to the response
         doc.pipe(res);
 
-        // Add invoice content to the PDF
         doc
             .fontSize(25)
             .text('Invoice', { align: 'center' })
@@ -85,13 +74,11 @@ const generateInvoice = async (req, res) => {
         doc.text(`Amount Paid: ₹${payment.amount}`);
         doc.text(`Date: ${new Date(payment.createdAt).toLocaleDateString()}`);
 
-        // Footer
         doc
             .moveDown()
             .fontSize(10)
             .text('Thank you for your payment!', { align: 'center' });
 
-        // Finalize the PDF
         doc.end();
     } catch (error) {
         console.error('Error generating invoice:', error);
@@ -99,20 +86,17 @@ const generateInvoice = async (req, res) => {
     }
 };
 
-//invoicewithdetailsto user mail
 
 const sendInvoiceWithMail = async (req, res) => {
     try {
         const { paymentId } = req.params;
 
-        // Fetch payment details from the database
         const payment = await Payment.findById(paymentId);
 
         if (!payment) {
             return res.status(404).json({ success: false, message: 'Payment not found' });
         }
 
-        // Send invoice email
         const emailResponse = await sendInvoiceEmail(payment);
 
         return res.status(200).json({
@@ -125,8 +109,6 @@ const sendInvoiceWithMail = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 };
-
-//complete payment
 
 const completePayment = async (req, res) => {
     try {
@@ -170,7 +152,7 @@ const completePayment = async (req, res) => {
             sessionId: session.id || "",
             paymentStatus: session.payment_status === "paid" ? "Paid" : session.payment_status,
             transactionDetails: session.payment_intent || "",
-            amount: session.amount_total / 100 || 0, // Convert amount to dollars (Stripe stores in cents)
+            amount: session.amount_total / 100 || 0,
         };
         const customerEmail =
             session.customer_email ||
@@ -190,14 +172,10 @@ const completePayment = async (req, res) => {
             return res.status(400).json({ error: "Customer name is missing in the payment session." });
         }
 
-        // console.log("customerName",customerName)
-
         const reservationDetails = await Reserve.findById(paymentDetails.reservation);
         if (!reservationDetails) {
             return res.status(404).json({ error: "Reservation details not found." });
         }
-
-        // console.log("Reservation Details:", reservationDetails);
 
         const newPayment = new Payment({
             userId: paymentDetails.userId,
@@ -231,9 +209,6 @@ const completePayment = async (req, res) => {
 
         } else if (paymentDetails.paymentType === "Final") {
             await recordPayment(customerEmail, paymentInfo.amount,customerName);
-
-            // Send Welcome Email
-
             await sendWelcomeEmail(customerEmail);
         }
 
@@ -253,9 +228,6 @@ const completePayment = async (req, res) => {
         });
     }
 };
-
-
-// Welcome Mail
 
 const sendWelcomeEmail = async (email) => {
     try {
@@ -282,7 +254,7 @@ const sendWelcomeEmail = async (email) => {
                 <p>For more details, please refer to the video tutorials below:</p>
                 <a href="https://example.com/tutorial1">Video Tutorial 1</a><br>
                 <a href="https://example.com/tutorial2">Video Tutorial 2</a><br>
-                <p>We’ve also attached a user guide to help you get started.</p>
+                <p>We've also attached a user guide to help you get started.</p>
                 <p>Happy carting!</p>
                 <p>Best regards,<br>Southwalton Carts Team</p>
             `,
@@ -294,15 +266,11 @@ const sendWelcomeEmail = async (email) => {
         };
 
         await transporter.sendMail(mailOptions);
-        // console.log("Welcome email sent successfully!");
     } catch (error) {
         console.error("Error sending welcome email:", error.message);
     }
 };
 
-
-
-// Export the handler functions
 module.exports = {
     PaymentInfo,
     getAllPayments,

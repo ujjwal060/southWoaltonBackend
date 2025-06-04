@@ -4,38 +4,45 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const createError = require('../middleware/error')
 const createSuccess = require('../middleware/success')
+const { getConfig } = require('../config');
 
-// Configure AWS S3
-const s3 = new S3({
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-  region: process.env.AWS_REGION,
-});
 
-// Upload files to S3
+let s3;
+async function initializeS3() {
+    const region = await getConfig('AWS_REGION');
+    const accessKeyId = await getConfig('AWS_ACCESS_KEY_ID');
+    const secretAccessKey = await getConfig('AWS_SECRET_ACCESS_KEY');
+
+    s3 = new S3({
+        region,
+        credentials: {
+            accessKeyId,
+            secretAccessKey,
+        },
+    });
+}
+
 const uploadToS3 = async (file) => {
-  const fileName = `${uuidv4()}${path.extname(file.originalname)}`;
-  const params = {
-    Bucket: process.env.AWS_S3_BUCKET_NAME,
-    Key: fileName,
-    Body: file.buffer,
-    ContentType: file.mimetype,
-  };
-
-  const command = new PutObjectCommand(params);
-  await s3.send(command);
-
-  return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+    if (!s3) {
+        await initializeS3();
+    }
+    const region = await getConfig('AWS_REGION');
+    const bucketName = await getConfig('AWS_S3_BUCKET_NAME');
+    const params = {
+        Bucket: bucketName,
+        Key: `uploads/${Date.now()}_${file.originalname}`,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+    };
+    const command = new PutObjectCommand(params);
+    await s3.send(command);
+    return `https://${bucketName}.s3.${region}.amazonaws.com/${params.Key}`;
 };
 
-// Create Customer Damage API
 exports.createCustomerDamage = async (req, res, next) => {
   try {
     const { paymentId, description } = req.body;
 
-    // Ensure DReasons and AReasons are arrays
     const reasonsD = Array.isArray(req.body.DReasons)
       ? req.body.DReasons
       : req.body.DReasons
@@ -47,7 +54,6 @@ exports.createCustomerDamage = async (req, res, next) => {
         ? [req.body.AReasons]
         : [];
 
-    // Upload images to S3
     const uploadedImages = await Promise.all(
       req.files.map((file) => uploadToS3(file))
     );
