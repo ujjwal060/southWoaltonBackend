@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3, PutObjectCommand } = require('@aws-sdk/client-s3');
 const Bookform = require('../models/checkoutModel');
 const Payment = require('../models/PaymentModel');
 const Reservation = require('../models/reserveModel');
@@ -9,27 +9,12 @@ const upload = require('../middleware/multer');
 const createError = require('../middleware/error');
 const createSuccess = require('../middleware/success');
 
-let s3;
-async function initializeS3() {
+const uploadToS3 = async (file) => {
     const region = await getConfig('AWS_REGION');
+    const bucketName = await getConfig('AWS_S3_BUCKET_NAME');
     const accessKeyId = await getConfig('AWS_ACCESS_KEY_ID');
     const secretAccessKey = await getConfig('AWS_SECRET_ACCESS_KEY');
 
-    s3 = new S3Client({
-        region,
-        credentials: {
-            accessKeyId,
-            secretAccessKey,
-        },
-    });
-}
-
-const uploadToS3 = async (file) => {
-    if (!s3) {
-        await initializeS3();
-    }
-    const region = await getConfig('AWS_REGION');
-    const bucketName = await getConfig('AWS_S3_BUCKET_NAME');
     const params = {
         Bucket: bucketName,
         Key: `uploads/${Date.now()}_${file.originalname}`,
@@ -37,6 +22,15 @@ const uploadToS3 = async (file) => {
         ContentType: file.mimetype,
     };
     const command = new PutObjectCommand(params);
+
+    let s3 = new S3({
+        region,
+        credentials: {
+            accessKeyId,
+            secretAccessKey,
+        },
+    });
+
     await s3.send(command);
     return `https://${bucketName}.s3.${region}.amazonaws.com/${params.Key}`;
 };

@@ -7,20 +7,6 @@ const User = require('../models/userModel');
 const Sign = require('../models/signModel');
 const { getConfig } = require('../config');
 
-let s3;
-async function initializeS3() {
-    const region = await getConfig('AWS_REGION');
-    const accessKeyId = await getConfig('AWS_ACCESS_KEY_ID');
-    const secretAccessKey = await getConfig('AWS_SECRET_ACCESS_KEY');
-
-    s3 = new S3({
-        region,
-        credentials: {
-            accessKeyId,
-            secretAccessKey,
-        },
-    });
-}
 
 exports.saveImageUrl = async (req, res) => {
     upload.single('image')(req, res, async (err) => {
@@ -54,9 +40,21 @@ exports.saveImageUrl = async (req, res) => {
                 ContentType: file.mimetype,
             };
 
+            const region = await getConfig('AWS_REGION');
+            const accessKeyId = await getConfig('AWS_ACCESS_KEY_ID');
+            const secretAccessKey = await getConfig('AWS_SECRET_ACCESS_KEY');
+
+            let s3 = new S3({
+                region,
+                credentials: {
+                    accessKeyId,
+                    secretAccessKey,
+                },
+            });
             await s3.putObject(params);
 
-            const fileUrl = `https://${AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${sanitizedFileName}`;
+
+            const fileUrl = `https://${AWS_S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${sanitizedFileName}`;
 
             const newImage = new Image({ userId, image: fileUrl });
             await newImage.save();
@@ -184,6 +182,17 @@ exports.sendRentalAgreementEmail = async (req, res) => {
             ContentType: file.mimetype,
         };
 
+        const region = await getConfig('AWS_REGION');
+        const accessKeyId = await getConfig('AWS_ACCESS_KEY_ID');
+        const secretAccessKey = await getConfig('AWS_SECRET_ACCESS_KEY');
+
+        let s3 = new S3({
+            region,
+            credentials: {
+                accessKeyId,
+                secretAccessKey,
+            },
+        });
         await s3.putObject(uploadParams);
         const fileUrl = `https://${AWS_S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileKey}`;
 
@@ -196,13 +205,13 @@ exports.sendRentalAgreementEmail = async (req, res) => {
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'development.aayaninfotech@gmail.com',
-                pass: 'defe qhhm kgmu ztkf',
+                user: 'ujjwalkumarsingh888@gmail.com',
+                pass: 'bind deyf lnwl rzix',
             },
         });
 
         const mailOptions = {
-            from: 'development.aayaninfotech@gmail.com',
+            from: 'ujjwalkumarsingh888@gmail.com',
             to: user.email,
             subject: 'Rental Agreement Signed Successfully',
             html: `
