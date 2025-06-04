@@ -21,9 +21,6 @@ const requestRoute = require('./routes/requestRoute')
 const pay=require('./routes/payRoute');
 const  { createPDF} =require ('./functions/generatePdf')
 
-
-//
-
 const bodyParser = require('body-parser')
 // const itemInventoryRoute = require('./routes/itemInventoryRoute')
 // const errorMiddleware = require('./middleware/errorMiddleware')

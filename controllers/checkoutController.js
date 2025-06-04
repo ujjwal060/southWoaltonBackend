@@ -1,10 +1,10 @@
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-const Bookform = require('../models/checkoutModel'); // Adjust the path as needed
+const Bookform = require('../models/checkoutModel');
 const Payment = require('../models/PaymentModel');
-const Reservation = require('../models/reserveModel'); // Adjust the path to your Reservation model
+const Reservation = require('../models/reserveModel');
 const Vehicle = require('../models/vehicleModel');
 
-const upload = require('../middleware/multer'); // Assuming your multer middleware is set up as provided earlier
+const upload = require('../middleware/multer');
 
 const createError = require('../middleware/error');
 const createSuccess = require('../middleware/success');
@@ -17,7 +17,6 @@ const s3 = new S3Client({
     },
 });
 
-// Helper function to upload files to S3
 const uploadToS3 = async (file) => {
     const params = {
         Bucket: process.env.AWS_S3_BUCKET_NAME,
@@ -42,20 +41,17 @@ const createBooking = async (req, res) => {
             customerDrivers
         } = req.body;
 
-        // Validate required fields
         if (!bname) return res.status(400).json({ message: 'Name is required' });
         if (!bphone) return res.status(400).json({ message: 'Phone Number is required' });
         if (!bemail) return res.status(400).json({ message: 'Email is required' });
         if (!bsize) return res.status(400).json({ message: 'Size of cart is required' });
         if (!baddress) return res.status(400).json({ message: 'Home Address is required' });
 
-        // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(bemail)) {
             return res.status(400).json({ message: 'Invalid email format' });
         }
 
-        // Parse and validate customerDrivers
         let parsedCustomerDrivers = [];
         try {
             parsedCustomerDrivers = JSON.parse(customerDrivers);
