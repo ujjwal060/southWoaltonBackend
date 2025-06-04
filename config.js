@@ -7,7 +7,16 @@ const ENV = process.env.NODE_ENV || 'development';
 const REGION = 'us-east-1';
 const SECRET_NAME = 'south-walton';
 
-const secretsManager = new SecretsManagerClient({ region: REGION });
+const secretsManager = new SecretsManagerClient({
+  region: REGION, credentials: {
+    accessKeyId: 'AKIAVLPW3SEXDMM6ZMVG',
+    secretAccessKey: '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'
+  }
+});
+
+// const secretsManager = new SecretsManagerClient({
+//   region: process.env.AWS_REGION || 'us-east-1'
+// });
 
 let secretsCache = null;
 
