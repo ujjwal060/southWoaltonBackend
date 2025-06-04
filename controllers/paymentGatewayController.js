@@ -1,12 +1,12 @@
 require('dotenv').config()
-const secretKey = process.env.STRIPE_SECRET_KEY
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { v4: uuidv4 } = require('uuid');
 const { getConfig } = require('../config');
 
 
 const createCheckoutSession = async (req, res) => {
     try {
-        const stripe=await getConfig('STRIPE_SECRET_KEY')
+        // const stripe=await getConfig('STRIPE_SECRET_KEY')
         const { amountInDollars, userId, bookingId, reservation, fromAdmin, paymentType } = req.body;
 
         if (!amountInDollars || !reservation || !fromAdmin || !paymentType) {
@@ -66,7 +66,7 @@ const createCheckoutSession = async (req, res) => {
         res.status(200).json({ session });
     } catch (error) {
         console.error("Error creating checkout session:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error:error.message});
     }
 };
 
