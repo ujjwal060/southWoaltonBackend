@@ -15,7 +15,7 @@ async function initializeS3() {
     const accessKeyId = await getConfig('AWS_ACCESS_KEY_ID');
     const secretAccessKey = await getConfig('AWS_SECRET_ACCESS_KEY');
 
-    s3 = new S3({
+    s3 = new S3Client({
         region,
         credentials: {
             accessKeyId,
