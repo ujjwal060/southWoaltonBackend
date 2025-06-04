@@ -1,30 +1,27 @@
 require('dotenv').config()
 const secretKey = process.env.STRIPE_SECRET_KEY
-// const stripe = require('stripe')(secretKey);
 const { v4: uuidv4 } = require('uuid');
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const { getConfig } = require('../config');
 
-
-//For Reservation Price ($100)
 
 const createCheckoutSession = async (req, res) => {
     try {
+        const stripe=await getConfig('STRIPE_SECRET_KEY')
         const { amountInDollars, userId, bookingId, reservation, fromAdmin, paymentType } = req.body;
 
         if (!amountInDollars || !reservation || !fromAdmin || !paymentType) {
             return res.status(400).json({ error: "All fields (amountInDollars, reservation,fromAdmin,paymentType) are required" });
         }
 
-        // Amount Breakdown
         const reservationAmount = 100;
-        const reservationTax = reservationAmount * 0.07; // Florida Tax (7%)
-        const reservationFee = reservationAmount * 0.05; // Online Convenience Fee (5%)
+        const reservationTax = reservationAmount * 0.07; 
+        const reservationFee = reservationAmount * 0.05; 
         const reservationPrice = reservationAmount + reservationTax + reservationFee;
 
         const vehicleRental = amountInDollars - reservationPrice;
-        const vehiclePrice = vehicleRental / 1.12; // Remove 12% (7% Tax + 5% Fee)
-        const vehicleTax = vehiclePrice * 0.07; // Florida Tax
-        const vehicleFee = vehiclePrice * 0.05; // Online Convenience Fee
+        const vehiclePrice = vehicleRental / 1.12; 
+        const vehicleTax = vehiclePrice * 0.07;
+        const vehicleFee = vehiclePrice * 0.05;
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ["card"],
@@ -72,12 +69,6 @@ const createCheckoutSession = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
-
-
-
-
-
-
 
 module.exports = {
      createCheckoutSession

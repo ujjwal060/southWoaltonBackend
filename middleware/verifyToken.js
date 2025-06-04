@@ -1,8 +1,10 @@
 const jwt = require("jsonwebtoken");
 const createError = require("../middleware/error");
 const createSuccess = require("../middleware/success");
+const { getConfig } = require('../config');
 
-const checkAuthentication = (req, res, next) => {
+const checkAuthentication = async(req, res, next) => {
+  const JWT_SECRET=await getConfig('JWT_SECRET');
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return next(createError(401, "You are not authenticated"));
@@ -11,7 +13,7 @@ const checkAuthentication = (req, res, next) => {
   if (!token) {
     return next(createError(401, "Authentication token missing"));
   }
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
       return next(createError(403, "Token is not valid"));
     }
@@ -21,12 +23,13 @@ const checkAuthentication = (req, res, next) => {
 };
 
 const verifyToken = async (req, res, next) => {
+  const JWT_SECRET=await getConfig('JWT_SECRET');
   const token = req.cookies.access_token;
   console.log({ token });
   if (!token) {
     return next(createError(401, "You are not Authenticated"));
   }
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token,JWT_SECRET, (err, user) => {
     if (err) {
       return next(createError(403, "Token is not valid"));
     } else {

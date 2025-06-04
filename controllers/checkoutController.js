@@ -3,30 +3,42 @@ const Bookform = require('../models/checkoutModel');
 const Payment = require('../models/PaymentModel');
 const Reservation = require('../models/reserveModel');
 const Vehicle = require('../models/vehicleModel');
-
+const { getConfig } = require('../config');
 const upload = require('../middleware/multer');
 
 const createError = require('../middleware/error');
 const createSuccess = require('../middleware/success');
 
-const s3 = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-});
+let s3;
+async function initializeS3() {
+    const region = await getConfig('AWS_REGION');
+    const accessKeyId = await getConfig('AWS_ACCESS_KEY_ID');
+    const secretAccessKey = await getConfig('AWS_SECRET_ACCESS_KEY');
+
+    s3 = new S3({
+        region,
+        credentials: {
+            accessKeyId,
+            secretAccessKey,
+        },
+    });
+}
 
 const uploadToS3 = async (file) => {
+    if (!s3) {
+        await initializeS3();
+    }
+    const region = await getConfig('AWS_REGION');
+    const bucketName = await getConfig('AWS_S3_BUCKET_NAME');
     const params = {
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
+        Bucket: bucketName,
         Key: `uploads/${Date.now()}_${file.originalname}`,
         Body: file.buffer,
-        ContentType: file.mimetype
+        ContentType: file.mimetype,
     };
     const command = new PutObjectCommand(params);
     await s3.send(command);
-    return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`;
+    return `https://${bucketName}.s3.${region}.amazonaws.com/${params.Key}`;
 };
 
 const createBooking = async (req, res) => {
@@ -68,17 +80,14 @@ const createBooking = async (req, res) => {
             const driver = parsedCustomerDrivers[index];
             const { dphone, demail, dname } = driver;
 
-            // Validate required fields for each driver
             if (!dphone) return res.status(400).json({ message: `Driver Phone Number is required for driver ${index + 1}` });
             if (!demail) return res.status(400).json({ message: `Driver Email is required for driver ${index + 1}` });
             if (!dname) return res.status(400).json({ message: `Driver Name is required for driver ${index + 1}` });
 
-            // Validate driver email format
             if (!emailRegex.test(demail)) {
                 return res.status(400).json({ message: `Invalid email format for driver ${index + 1}` });
             }
 
-            // Find and upload files
             const dpolicyFile = req.files.find(file => file.fieldname === `dpolicy[${index}]`);
             const dlicenseFile = req.files.find(file => file.fieldname === `dlicense[${index}]`);
 
@@ -96,7 +105,6 @@ const createBooking = async (req, res) => {
             });
         }
 
-        // Create booking object
         const booking = new Bookform({
             bname,
             bphone,
@@ -108,7 +116,6 @@ const createBooking = async (req, res) => {
             customerDrivers: updatedCustomerDrivers,
         });
 
-        // Save booking to the database
         const savedBooking = await booking.save();
 
         res.status(201).json({
@@ -122,20 +129,13 @@ const createBooking = async (req, res) => {
     }
 };
 
-
-
-
-
-// Get Booking History by User ID
 const bookingHistoryByUserId = async (req, res, next) => {
     const { userId } = req.params;
-    const { page = 1, limit = 10, search = "" } = req.query; // Pagination and search query parameters
-
+    const { page = 1, limit = 10, search = "" } = req.query;
     try {
-        // Find payments for the user and sort by createdAt in descending order
         const payments = await Payment.find({ userId })
             .select('amount bookingId reservation')
-            .sort({ createdAt: -1 }); // Sort by newest first
+            .sort({ createdAt: -1 });
 
         const filteredPayments = await Promise.all(
             payments.map(async (payment) => {
@@ -171,17 +171,14 @@ const bookingHistoryByUserId = async (req, res, next) => {
             })
         );
 
-        // Search filter: filter by vehicle name (vname)
         const searchedPayments = filteredPayments.filter((payment) => {
             const vname = payment.reservationDetails?.vehicleDetails?.vname || "";
             return vname.toLowerCase().includes(search.toLowerCase());
         });
 
-        // Calculate total pages
         const total = searchedPayments.length;
         const totalPages = Math.ceil(total / limit);
 
-        // Pagination
         const startIndex = (page - 1) * limit;
         const paginatedPayments = searchedPayments.slice(startIndex, startIndex + parseInt(limit));
 
@@ -199,12 +196,6 @@ const bookingHistoryByUserId = async (req, res, next) => {
         return next(createError(500, "Error fetching payment history"));
     }
 };
-
-
-
-
-
-
 
 module.exports = {
     createBooking,

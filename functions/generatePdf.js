@@ -2,36 +2,36 @@
 require('dotenv').config();
 const { PDFDocument, rgb } = require('pdf-lib');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-const axios = require('axios'); // For fetching the image from the S3 URL
-const SignModel = require('../models/signModel'); // Import the signModel for user data
+const axios = require('axios');
+const SignModel = require('../models/signModel');
+const { getConfig } = require('../config');
 
 const createPDF = async (userId) => {
   try {
-    console.log("Bucket Name: ", process.env.AWS_S3_BUCKET_NAME);
-    console.log("AWS Region: ", process.env.AWS_REGION);
+    const AWS_S3_BUCKET_NAME = await getConfig('AWS_S3_BUCKET_NAME');
+    const AWS_REGION = await getConfig('AWS_REGION');
+    const AWS_SECRET_ACCESS_KEY = await getConfig('AWS_SECRET_ACCESS_KEY');
+    const AWS_ACCESS_KEY_ID = await getConfig('AWS_ACCESS_KEY_ID');
 
-    const bucketName = process.env.AWS_S3_BUCKET_NAME;
+
+    const bucketName =AWS_S3_BUCKET_NAME;
     if (!bucketName) {
       throw new Error("S3_BUCKET_NAME is missing from environment variables.");
     }
 
-    // Fetch the user and their image
     const user = await SignModel.findOne({ userId });
     if (!user || !user.image) {
       throw new Error("User or image not found");
     }
 
-    const imageUrl = user.image; // Assuming `image` contains the S3 URL
+    const imageUrl = user.image;
     console.log("User Image URL:", imageUrl);
 
-    // Fetch the image as a buffer from the S3 URL
     const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
     const imageBuffer = Buffer.from(response.data);
 
-    // Create a new PDFDocument (Now it's before image embedding)
     const pdfDoc = await PDFDocument.create();
 
-    // Determine image format using Content-Type
     const contentType = response.headers['content-type'];
     let embedImage;
     if (contentType.includes('image/png')) {
@@ -42,9 +42,8 @@ const createPDF = async (userId) => {
       throw new Error('Unsupported image format. Only PNG and JPG/JPEG are allowed.');
     }
 
-    let page = pdfDoc.addPage([600, 800]); // Adjusted page size for the text
+    let page = pdfDoc.addPage([600, 800]);
 
-    // Add header content to the PDF
     page.drawText('Agreement', {
       x: 50,
       y: 750,
@@ -52,7 +51,6 @@ const createPDF = async (userId) => {
       color: rgb(0, 0.53, 0.71),
     });
 
-    // Define the static text
     const text = `
     All deliveries will be made in the afternoon, starting from 2 PM, unless otherwise arranged. 
     The exact delivery time will correspond to your reservation. All pickups are scheduled for 8 AM unless specified differently. 
@@ -199,7 +197,7 @@ Signature
       if (line.trim() !== '') {
         wrappedLines.push(line.trim());
       }
-      wrappedLines.push(''); // Add blank line between paragraphs
+      wrappedLines.push('');
     });
 
     wrappedLines.forEach((line) => {
@@ -211,26 +209,22 @@ Signature
       currentY -= lineHeight;
     });
 
-    // Embed the user image (making the image smaller and aligning it to the right side)
-    const scaleFactor = 0.3; // Scale image to 30% of its original size
+    const scaleFactor = 0.3;
     const { width, height } = embedImage.scale(scaleFactor);
 
-    // Calculate the position for the image on the right-hand side
-    const imageXPosition = 600 - width - 20; // Right alignment with 20px margin
-    const imageYPosition = currentY - height - 20; // Position image just below the text
+    const imageXPosition = 600 - width - 20;
+    const imageYPosition = currentY - height - 20;
 
-    // If currentY is too low to fit the image, create a new page
     if (imageYPosition < 50) {
       page = pdfDoc.addPage([600, 800]);
-      currentY = 750; // Reset Y position for the new page
+      currentY = 750;
     }
 
-    // Add the "Signature" text above the image
     const signatureText = "Signature";
-    const signatureTextFontSize = 12; // Font size for the signature text
+    const signatureTextFontSize = 12;
     const signatureTextWidth = font.widthOfTextAtSize(signatureText, signatureTextFontSize);
-    const textXPosition = imageXPosition + (width / 2) - (signatureTextWidth / 2); // Center the text above the image
-    const textYPosition = imageYPosition + height + 5; // Position the text slightly above the image
+    const textXPosition = imageXPosition + (width / 2) - (signatureTextWidth / 2);
+    const textYPosition = imageYPosition + height + 5;
 
     page.drawText(signatureText, {
       x: textXPosition,
@@ -239,7 +233,6 @@ Signature
       color: rgb(0, 0, 0),
     });
 
-    // Add the image to the PDF on the right-hand side
     page.drawImage(embedImage, {
       x: imageXPosition,
       y: imageYPosition,
@@ -247,15 +240,14 @@ Signature
       height,
     });
 
-    // Save the PDF to a buffer
     const pdfBytes = await pdfDoc.save();
 
     const fileName = `User_${userId}_ImportantInformation.pdf`;
     const s3 = new S3Client({
-      region: process.env.AWS_REGION,
+      region:AWS_REGION,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId:AWS_ACCESS_KEY_ID,
+        secretAccessKey:AWS_SECRET_ACCESS_KEY,
       },
     });
 
@@ -268,12 +260,9 @@ Signature
 
     console.log('Uploading file with parameters:', uploadParams);
 
-    // Upload to S3
     const result = await s3.send(new PutObjectCommand(uploadParams));
-    const fileUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
-    console.log(`PDF uploaded successfully: ${fileUrl}`);
+    const fileUrl = `https://${bucketName}.s3.${AWS_REGION}.amazonaws.com/${fileName}`;
 
-    // Update the user's record in the database with the PDF URL
     user.pdf = fileUrl;
     await user.save();
     console.log('User record updated with PDF URL:', fileUrl);
