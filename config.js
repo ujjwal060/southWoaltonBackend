@@ -1,14 +1,11 @@
 const dotenv = require('dotenv');
-const {
-  SecretsManagerClient,
-  GetSecretValueCommand,
-} = require('@aws-sdk/client-secrets-manager');
+const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
 
 dotenv.config();
 
 const ENV = process.env.NODE_ENV || 'development';
-const REGION = process.env.AWS_REGION || 'us-east-1';
-const SECRET_NAME = 'swe-secrets';
+const REGION = 'us-east-1';
+const SECRET_NAME = 'south-walton';
 
 const secretsManager = new SecretsManagerClient({ region: REGION });
 
@@ -16,18 +13,11 @@ let secretsCache = null;
 
 async function fetchSecretsFromAWS() {
   try {
-    const command = new GetSecretValueCommand({
-      SecretId: SECRET_NAME,
-    });
-
+    const command = new GetSecretValueCommand({ SecretId: SECRET_NAME });
     const response = await secretsManager.send(command);
 
-    if (response.SecretString) {
-      return JSON.parse(response.SecretString);
-    } else {
-      console.error('SecretString not found in response:', response);
-      return {};
-    }
+    const secrets = JSON.parse(response.SecretString);
+    return secrets;
   } catch (error) {
     console.error('Error fetching secrets from AWS:', error.message);
     return {};
