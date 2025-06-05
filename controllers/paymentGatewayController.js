@@ -16,7 +16,7 @@ const createCheckoutSession = async (req, res) => {
         const reservationAmount = 100;
         const reservationTax = reservationAmount * 0.07; 
         // const reservationFee = reservationAmount * 0.05; 
-        const reservationPrice = reservationAmount + reservationTax + reservationFee;
+        const reservationPrice = reservationAmount + reservationTax;
 
         const vehicleRental = amountInDollars - reservationPrice;
         const vehiclePrice = vehicleRental / 1.12; 
