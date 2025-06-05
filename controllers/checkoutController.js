@@ -2,7 +2,7 @@ const { S3, PutObjectCommand } = require('@aws-sdk/client-s3');
 const Bookform = require('../models/checkoutModel');
 const Payment = require('../models/PaymentModel');
 const Reservation = require('../models/reserveModel');
-const Vehicle = require('../models/vehicleModel');
+const Vehicle = require('../models/newVehicleModel');
 const { getConfig } = require('../config');
 const upload = require('../middleware/multer');
 
