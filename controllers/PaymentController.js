@@ -234,8 +234,8 @@ const sendWelcomeEmail = async (email) => {
         const transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
-                user: 'development.aayaninfotech@gmail.com',
-                pass: 'defe qhhm kgmu ztkf',
+                user: 'ujjwalkumarsingh888@gmail.com',
+                pass: 'bind deyf lnwl rzix',
             },
         });
 

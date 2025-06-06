@@ -5,14 +5,14 @@ const fs = require("fs");
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'development.aayaninfotech@gmail.com',
-        pass: 'defe qhhm kgmu ztkf',
+        user: 'ujjwalkumarsingh888@gmail.com',
+        pass: 'bind deyf lnwl rzix',
     },
 });
 
 const sendInvoiceEmail = async (payment) => {
     const mailOptions = {
-        from: 'development.aayaninfotech@gmail.com',
+        from: 'ujjwalkumarsingh888@gmail.com',
         to: payment.email,
         subject: 'Invoice for Your Payment',
         html: `
