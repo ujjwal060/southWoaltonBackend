@@ -81,7 +81,7 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
 const createInvoice = async (customerName, email, amount, paymentType, userId, bookingId, reservation, fromAdmin) => {
     try {
         console.log("In service:", customerName, email, amount, paymentType, userId, bookingId, reservation, fromAdmin);
-
+        const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const numericAmount = parseFloat(amount);
         if (isNaN(numericAmount)) {
             throw new Error(`Invalid amount value: ${amount}`);
