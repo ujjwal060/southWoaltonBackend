@@ -21,6 +21,7 @@ const BookformSchema = new Schema({
     driver: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', default: null },
     status: { type: String, enum: ['PENDING', 'DELIVERED', 'COMPLETED'], default: 'PENDING' },
     fromAdmin: { type: Boolean, default: false },
+    invoiceId:{type:Number},
     // Adding customerDrivers
     customerDrivers: [CustomerDriverSchema]
 }, { timestamps: true });

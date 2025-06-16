@@ -1,6 +1,7 @@
 const axios = require('axios');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getConfig } = require('../config');
+const booking = require("../models/checkoutModel")
 
 const getFreshBooksHeaders = async () => {
     const { ensureFreshBooksToken } = require('../controllers/authController');
@@ -180,9 +181,13 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
             { headers }
         );
 
-        const invoiceId = response.data.response.result.invoice.id;
+        const invoiceId = response.data.response.result.invoice.invoiceid;
         console.log('Invoice created successfully:', invoiceId);
-
+        await booking.findByIdAndUpdate(
+            bookingId,
+            { $set: { invoiceId } },
+            { new: true }
+        );
         const recipients = [email];
         let subject = 'Your Invoice Details';
         let body = `Thank you for your business, ${customerName}. Attached is your invoice.`;
@@ -313,7 +318,7 @@ const recordPayment = async (email, amount, customerName) => {
 
         const headers = await getFreshBooksHeaders();
 
-       
+
         const invoiceResponse = await axios.get(
             `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/invoices/invoices?client_id=${clientId}`,
             { headers }
