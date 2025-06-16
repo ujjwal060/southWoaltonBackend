@@ -4,7 +4,7 @@ const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client
 dotenv.config();
 
 const ENV = process.env.NODE_ENV || 'development';
-const SECRET_NAME = 'south-walton';
+const SECRET_NAME = 'south-voltana';
 
 const secretsManager = new SecretsManagerClient({
    region: process.env.AWS_REGION || "us-east-1"
