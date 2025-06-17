@@ -2,6 +2,8 @@ require('dotenv').config()
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { v4: uuidv4 } = require('uuid');
 const { getConfig } = require('../config');
+const reservationModel=require("../models/reserveModel");
+const bookingModel=require("../models/checkoutModel");
 
 
 const createCheckoutSession = async (req, res) => {
@@ -13,13 +15,34 @@ const createCheckoutSession = async (req, res) => {
             return res.status(400).json({ error: "All fields (amountInDollars, reservation,fromAdmin,paymentType) are required" });
         }
 
+        const bookingData=await bookingModel.findById(bookingId).select('reservationId');
+        const reservationData=await reservationModel.findById(bookingData.reservationId);
+
+        // const reservationAmount = 100;
+        // const reservationTax = reservationAmount * 0.07; 
+        // // const reservationFee = reservationAmount * 0.05; 
+        // const reservationPrice = reservationAmount + reservationTax;
+
+        // const vehicleRental = amountInDollars - reservationPrice;
+        // const vehiclePrice = vehicleRental / 1.12; 
+        // const vehicleTax = vehiclePrice * 0.07;
+        // const vehicleFee = vehiclePrice * 0.05;
+
         const reservationAmount = 100;
-        const reservationTax = reservationAmount * 0.07; 
-        // const reservationFee = reservationAmount * 0.05; 
+
+        const today = new Date();
+        const bookingDateObj = new Date(reservationData.pickdate);
+
+        const isSameDay =
+            today.getFullYear() === bookingDateObj.getFullYear() &&
+            today.getMonth() === bookingDateObj.getMonth() &&
+            today.getDate() === bookingDateObj.getDate();
+
+        const reservationTax = isSameDay ? reservationAmount * 0.07 : 0;
         const reservationPrice = reservationAmount + reservationTax;
 
         const vehicleRental = amountInDollars - reservationPrice;
-        const vehiclePrice = vehicleRental / 1.12; 
+        const vehiclePrice = vehicleRental / 1.12;
         const vehicleTax = vehiclePrice * 0.07;
         const vehicleFee = vehiclePrice * 0.05;
 
@@ -64,11 +87,10 @@ const createCheckoutSession = async (req, res) => {
 
         res.status(200).json({ session });
     } catch (error) {
-        console.error("Error creating checkout session:", error);
-        res.status(500).json({ error:error.message});
+        res.status(500).json({ error: error.message });
     }
 };
 
 module.exports = {
-     createCheckoutSession
+    createCheckoutSession
 };
