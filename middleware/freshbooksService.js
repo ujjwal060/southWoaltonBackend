@@ -1,5 +1,5 @@
 const axios = require('axios');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')('sk_test_51QV6moK0VXG1vNgVGgBi3ANHg8T2CHBgWK4u7arXbBoPVFxl8vlNclrjVBxSW9flVwSd7V0Gw34EILll2BDxdfok000EPzr9Ds');
 const { getConfig } = require('../config');
 const booking = require("../models/checkoutModel")
 const reservationModel = require("../models/reserveModel");
@@ -15,7 +15,7 @@ const getFreshBooksHeaders = async () => {
 
 const createStripePaymentLink = async (amount, email, paymentType, userId, bookingId, reservation, fromAdmin) => {
     try {
-        const stripe = await getConfig('STRIPE_SECRET_KEY');
+        // const stripe = await getConfig('STRIPE_SECRET_KEY');
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
@@ -143,14 +143,6 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
 
 
             lines.push(
-                // {
-                //     name: 'Reservation Price',
-                //     description: 'Flat reservation fee',
-                //     qty: 1,
-                //     unit_cost: { amount: reservationPrice, currency: 'USD' },
-                //     taxName1: "Florida Tax",
-                //     taxAmount1: floridaTaxRate * 100
-                // },
                 reservationLine,
                 {
                     name: 'Balance Amount',

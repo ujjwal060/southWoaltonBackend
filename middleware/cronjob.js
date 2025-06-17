@@ -6,7 +6,7 @@ const stripeService = require("../controllers/paymentGatewayController");
 const mongoose = require('mongoose');
 const { createInvoice } = require('../middleware/freshbooksService');
 
-cron.schedule('0 0 * * *', async () => {
+cron.schedule('* * * * *', async () => {
     console.log('Cron job started:', new Date());
     try {
         const today = new Date();
@@ -51,7 +51,7 @@ cron.schedule('0 0 * * *', async () => {
             const customerName = payment.paymentDetails.transactionDetails.payment_method.billing_details.name
             console.log("customerName",customerName)
 
-            if (diffInDays <= 21) {
+            if (diffInDays <= 15) {
                 console.log(email,reservation.reserveAmount, 'Final')
                 await createInvoice(customerName,email, "250", 'Final', payment.userId, payment.bookingId, payment.reservation, payment.fromAdmin);
                 payment.mailSent = true;
