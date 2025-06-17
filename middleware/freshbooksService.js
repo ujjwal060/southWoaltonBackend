@@ -2,7 +2,7 @@ const axios = require('axios');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getConfig } = require('../config');
 const booking = require("../models/checkoutModel")
-
+const reservationModel = require("../models/reserveModel");
 const getFreshBooksHeaders = async () => {
     const { ensureFreshBooksToken } = require('../controllers/authController');
     const accessToken = await ensureFreshBooksToken();
@@ -102,6 +102,8 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
 
 
         const headers = await getFreshBooksHeaders();
+        const bookingData = await bookingModel.findById(bookingId).select('reservationId');
+        const reservationData = await reservationModel.findById(bookingData.reservationId);
 
         const floridaTaxRate = 0.07;
         const convenienceFeeRate = 0.05;
@@ -115,20 +117,41 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
         if (paymentType === "Reservation") {
             const reservationPrice = 100;
             const balanceAmount = numericAmount;
+            const today = new Date();
+            const bookingDateObj = new Date(reservationData.pickdate);
+
+            const isSameDay =
+                today.getFullYear() === bookingDateObj.getFullYear() &&
+                today.getMonth() === bookingDateObj.getMonth() &&
+                today.getDate() === bookingDateObj.getDate();
+
             const totalBeforeFees = reservationPrice + balanceAmount;
 
-            onlineConvenienceFee = totalBeforeFees * convenienceFeeRate;
+            onlineConvenienceFee = balanceAmount * convenienceFeeRate;
             taxableAmount = totalBeforeFees + onlineConvenienceFee;
 
-            lines.push(
-                {
-                    name: 'Reservation Price',
-                    description: 'Flat reservation fee',
-                    qty: 1,
-                    unit_cost: { amount: reservationPrice, currency: 'USD' },
+            const reservationLine = {
+                name: 'Reservation Price',
+                description: 'Flat reservation fee',
+                qty: 1,
+                unit_cost: { amount: reservationPrice, currency: 'USD' },
+                ...(isSameDay && {
                     taxName1: "Florida Tax",
                     taxAmount1: floridaTaxRate * 100
-                },
+                })
+            };
+
+
+            lines.push(
+                // {
+                //     name: 'Reservation Price',
+                //     description: 'Flat reservation fee',
+                //     qty: 1,
+                //     unit_cost: { amount: reservationPrice, currency: 'USD' },
+                //     taxName1: "Florida Tax",
+                //     taxAmount1: floridaTaxRate * 100
+                // },
+                reservationLine,
                 {
                     name: 'Balance Amount',
                     description: 'Remaining balance for your reservation',
