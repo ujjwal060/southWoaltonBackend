@@ -1,7 +1,5 @@
 const Role = require('../models/roleModel');
 
-
-//to Create role 
 const createRole = async(req, res, next) => {
     try {
         if(req.body.role && req.body.role!==''){
@@ -18,7 +16,6 @@ const createRole = async(req, res, next) => {
  }
 }
 
-// to update role
 const updateRole = async(req, res, next) => {
     try {
         const role = await Role.findById({_id: req.params.id});
@@ -34,7 +31,7 @@ const updateRole = async(req, res, next) => {
        return res.status(500).send("Internal Server Error!")
  }
 }
-// get all roles
+
 const getRoles = async(req, res, next) => {
     try {
             const roles = await Role.find({});
@@ -45,7 +42,6 @@ const getRoles = async(req, res, next) => {
  }
 }
 
-//delete role
 const deleteRole = async(req, res, next) => {
     try {
         const role = await Role.findById({_id: req.params.id});

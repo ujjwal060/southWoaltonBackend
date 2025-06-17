@@ -16,11 +16,12 @@ const BookformSchema = new Schema({
     baddress: { type: String, required: true },
     baddressh: { type: String, required: false },
     paymentId: { type: Schema.Types.ObjectId, ref: 'Payment', required: false },
-    reservationId: { type: Schema.Types.ObjectId, ref: 'Reservation', required: false },
+    reservationId: { type: Schema.Types.ObjectId, ref: 'Reservation', required: true },
     vehicleId: { type: String, required: false },
     driver: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', default: null },
     status: { type: String, enum: ['PENDING', 'DELIVERED', 'COMPLETED'], default: 'PENDING' },
     fromAdmin: { type: Boolean, default: false },
+    invoiceId:{type:Number},
     // Adding customerDrivers
     customerDrivers: [CustomerDriverSchema]
 }, { timestamps: true });

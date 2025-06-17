@@ -10,18 +10,16 @@ const bcrypt = require('bcrypt');
 const axios = require('axios');
 const freshbooksService = require("../middleware/freshbooksService");
 const FreshBooksToken = require('../models/freshbooksModel');
+const { getConfig } = require('../config');
+
 
 const signUp = async (req, res, next) => {
   try {
-    // Check if email already exists in the database
     const existingUser = await User.findOne({ email: req.body.email });
-
     if (existingUser) {
-      // If the email is already registered, return an error
       return res.status(400).json({ message: "Email is already registered" });
     }
 
-    // If email is not taken, create a new user
     const newUser = new User({
       fullName: req.body.fullName,
       email: req.body.email,
@@ -31,13 +29,10 @@ const signUp = async (req, res, next) => {
       state: req.body.state,
     });
 
-    // Save the new user to the database
     await newUser.save();
 
-    // Return success message
     return next(createSuccess(200, "User Registered Successfully"));
   } catch (error) {
-    // Handle errors, such as database or server issues
     return next(createError(500, "Something went wrong"));
   }
 };
@@ -45,29 +40,24 @@ const signUp = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    // Find user by email
+    const JWT_SECRET = await getConfig('JWT_SECRET');
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
-      // If user is not found
       return next(createError(404, "User Not Found"));
     }
 
-    // Check if the provided password matches the user's password
     const isPasswordMatch = user.password === req.body.password;
 
     if (!isPasswordMatch) {
-      // If password is incorrect
       return next(createError(404, "Password is Incorrect"));
     }
 
-    // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, isAdmin: user.isAdmin }, // Removed roles and roles-related code
-      process.env.JWT_SECRET
+      { id: user._id, isAdmin: user.isAdmin },
+      JWT_SECRET
     );
 
-    // Send response with the token
     res.cookie("access_token", token, { httpOnly: true }).status(200).json({
       status: 200,
       message: "Login Success",
@@ -75,12 +65,10 @@ const login = async (req, res, next) => {
       token,
     });
   } catch (error) {
-    // Handle server errors
     return next(createError(500, "Something went wrong"));
   }
 };
 
-//Register Admin
 const registerAdmin = async (req, res, next) => {
   try {
     const role = await Role.find({});
@@ -96,10 +84,8 @@ const registerAdmin = async (req, res, next) => {
       roles: role,
     });
     await newUser.save();
-    //return res.status(200).send("User Registered Successfully")
     return next(createSuccess(200, "Admin Registered Successfully"));
   } catch (error) {
-    //return res.status(500).send("Something went wrong")
     return next(createError(500, "Something went wrong"));
   }
 };
@@ -107,10 +93,6 @@ const registerAdmin = async (req, res, next) => {
 const generateOTP = () => {
   return Math.floor(1000 + Math.random() * 9000);
 };
-
-console.log(generateOTP());
-
-//send reset mail
 
 const sendEmail = async (req, res, next) => {
   try {
@@ -121,14 +103,13 @@ const sendEmail = async (req, res, next) => {
       return next(createError(404, "User Not found"));
     }
 
-    const otp = generateOTP(); // Assume generateOTP is a function to generate OTP
-    const expiryTime = Date.now() + 25 * 60 * 1000; // 15 minutes in milliseconds
+    const otp = generateOTP();
+    const expiryTime = Date.now() + 25 * 60 * 1000;
 
-    // Save OTP and expiry time to UserToken model
     const newToken = new UserToken({
       userId: user._id,
-      token: otp, // Save OTP as token
-      expiry: expiryTime, // Set expiry time correctly
+      token: otp,
+      expiry: expiryTime,
     });
 
     const mailTransporter = nodemailer.createTransport({
@@ -139,7 +120,7 @@ const sendEmail = async (req, res, next) => {
       },
 
       tls: {
-        rejectUnauthorized: false, // Bypass self-signed certificate issues (not recommended for production)
+        rejectUnauthorized: false,
       },
     });
 
@@ -164,9 +145,8 @@ const sendEmail = async (req, res, next) => {
       `,
     };
 
-    // Send email using promi
     await mailTransporter.sendMail(mailDetails);
-    await newToken.save(); // Save OTP in the databater email is sent
+    await newToken.save();
 
     res.status(200).json({ message: "Email Sent Successfully" });
   } catch (err) {
@@ -176,8 +156,6 @@ const sendEmail = async (req, res, next) => {
 };
 
 
-
-// verify OTP
 
 const verifyOTP = async (req, res) => {
   try {
@@ -209,7 +187,6 @@ const verifyOTP = async (req, res) => {
 
 
 
-// Reset Password
 const resetPassword = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -219,9 +196,6 @@ const resetPassword = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
-
-    // const saltRounds = 10;
-    // const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     user.password = password;
 
@@ -233,10 +207,11 @@ const resetPassword = async (req, res) => {
   }
 }
 
-// controllers/authController.js
 
-const redirectToFreshBooks = (req, res) => {
-  const authUrl = `https://auth.freshbooks.com/oauth/authorize?client_id=${process.env.FRESHBOOKS_CLIENT_ID}&response_type=code&redirect_uri=${process.env.FRESHBOOKS_REDIRECT_URI}`;
+const redirectToFreshBooks = async (req, res) => {
+  const FRESHBOOKS_CLIENT_ID = await getConfig('FRESHBOOKS_CLIENT_ID');
+  const FRESHBOOKS_REDIRECT_URI = await getConfig('FRESHBOOKS_REDIRECT_URI');
+  const authUrl = `https://auth.freshbooks.com/oauth/authorize?client_id=${FRESHBOOKS_CLIENT_ID}&response_type=code&redirect_uri=${FRESHBOOKS_REDIRECT_URI}`;
   res.redirect(authUrl);
 };
 
@@ -263,17 +238,19 @@ const connectFreshBooks = async (req, res) => {
 };
 
 const refreshAccessToken = async (refreshToken) => {
+  const FRESHBOOKS_CLIENT_ID = await getConfig('FRESHBOOKS_CLIENT_ID');
+  const FRESHBOOKS_CLIENT_SECRET=await getConfig('FRESHBOOKS_CLIENT_SECRET');
   const response = await axios.post('https://auth.freshbooks.com/oauth/token', {
     grant_type: 'refresh_token',
-    client_id: process.env.FRESHBOOKS_CLIENT_ID,
-    client_secret: process.env.FRESHBOOKS_CLIENT_SECRET,
+    client_id:FRESHBOOKS_CLIENT_ID,
+    client_secret: FRESHBOOKS_CLIENT_SECRET,
     refresh_token: refreshToken,
   });
   return response.data;
 };
 
 const ensureFreshBooksToken = async () => {
-  const adminEmail = process.env.FRESHBOOKS_ADMIN_EMAIL;
+  const adminEmail =await getConfig('FRESHBOOKS_ADMIN_EMAIL');
 
   if (!adminEmail) {
     throw new Error("Admin email is not configured in environment variables.");
@@ -285,7 +262,6 @@ const ensureFreshBooksToken = async () => {
     throw new Error(`No FreshBooks token found for admin email: ${adminEmail}`);
   }
 
-  // Refresh the token if expired
   if (new Date() >= token.expiresAt) {
     console.log("Refreshing FreshBooks token...");
     const refreshedToken = await refreshAccessToken(token.refreshToken);
@@ -312,6 +288,6 @@ module.exports = {
   verifyOTP,
   redirectToFreshBooks,
   connectFreshBooks,
-  ensureFreshBooksToken, 
+  ensureFreshBooksToken,
   refreshAccessToken
 };
