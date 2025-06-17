@@ -102,7 +102,7 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
 
 
         const headers = await getFreshBooksHeaders();
-        const bookingData = await bookingModel.findById(bookingId).select('reservationId');
+        const bookingData = await booking.findById(bookingId).select('reservationId');
         const reservationData = await reservationModel.findById(bookingData.reservationId);
 
         const floridaTaxRate = 0.07;
