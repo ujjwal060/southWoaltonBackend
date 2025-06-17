@@ -44,7 +44,8 @@ const createBooking = async (req, res) => {
             bsize,
             baddress,
             baddressh,
-            customerDrivers
+            customerDrivers,
+            reservationId
         } = req.body;
 
         if (!bname) return res.status(400).json({ message: 'Name is required' });
@@ -108,6 +109,7 @@ const createBooking = async (req, res) => {
             baddressh,
             fromAdmin: false,
             customerDrivers: updatedCustomerDrivers,
+            reservationId:reservationId
         });
 
         const savedBooking = await booking.save();
