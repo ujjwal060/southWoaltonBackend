@@ -22,6 +22,7 @@ const BookformSchema = new Schema({
     status: { type: String, enum: ['PENDING', 'DELIVERED', 'COMPLETED'], default: 'PENDING' },
     fromAdmin: { type: Boolean, default: false },
     invoiceId:{type:Number},
+    invoiceNumber:{type:String},
     // Adding customerDrivers
     customerDrivers: [CustomerDriverSchema]
 }, { timestamps: true });

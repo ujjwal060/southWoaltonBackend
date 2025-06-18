@@ -193,10 +193,10 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
         );
 
         const invoiceId = response.data.response.result.invoice.invoiceid;
-        console.log('Invoice created successfully:', invoiceId);
+        const invoiceNumber=response.data.response.result.invoice.invoice_number;
         await booking.findByIdAndUpdate(
             bookingId,
-            { $set: { invoiceId } },
+            { $set: { invoiceId,invoiceNumber } },
             { new: true }
         );
         const recipients = [email];
