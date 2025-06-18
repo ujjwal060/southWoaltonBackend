@@ -48,21 +48,24 @@ const createStripePaymentLink = async (amount, email, paymentType, userId, booki
 };
 
 
-const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includePdf) => {
+const sendInvoiceByEmail = async (invoiceId, recipients, customerName) => {
     try {
         const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const headers = await getFreshBooksHeaders();
 
+        let subject = 'Your Invoice Details';
+        let body = `Thank you for your business, ${customerName}. Attached is your invoice.`;
+
         const emailData = {
-            invoice: {
-                // action_email: true,
-                email_recipients: recipients,
-                email_include_pdf: includePdf,
-                invoice_customized_email: {
-                    subject,
-                    body,
-                },
-            },
+            "invoice": {
+                "action_email": true,
+                "email_recipients": "ujjwal.singh@aayaninfotech.com",
+                "email_include_pdf": true,
+                "invoice_customized_email": {
+                    "subject":subject,
+                    "body":body
+                }
+            }
         };
 
         const response = await axios.put(
@@ -217,7 +220,7 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
         }
         console.log(paymentLink);
 
-        await sendInvoiceByEmail(invoiceId, recipients, subject, body, true);
+        await sendInvoiceByEmail(invoiceId, recipients, customerName);
 
         return response.data;
     } catch (error) {
