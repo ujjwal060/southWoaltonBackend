@@ -57,7 +57,7 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
         const emailData = {
             invoice: {
                 action_email: true,
-                email_recipients: "ujjwal@yopmail.com",
+                email_recipients: recipients,
                 email_include_pdf: true,
                 invoice_customized_email: {
                     subject,
@@ -67,7 +67,7 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
         };
 
         const response = await axios.put(
-            `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/invoices/invoices/${invoiceId}`,
+            `https://api.freshbooks.com/accounting/account/AQ17OM/invoices/invoices/${invoiceId}`,
             emailData,
             { headers }
         );
