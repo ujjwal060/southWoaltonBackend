@@ -187,7 +187,7 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
             customerid: clientId,
             create_date: new Date().toISOString().split('T')[0],
             lines,
-            customerName: fullName
+            // customerName: fullName
         };
 
         const response = await axios.post(
