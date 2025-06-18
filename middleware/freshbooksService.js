@@ -42,7 +42,6 @@ const createStripePaymentLink = async (amount, email, paymentType, userId, booki
 
         return session.url;
     } catch (error) {
-        console.error('Error creating Stripe payment link:', error.message);
         throw new Error('Failed to create payment link.');
     }
 };
@@ -71,17 +70,14 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
             { headers }
         );
 
-        console.log('Invoice email sent successfully:', response.data);
         return response.data;
     } catch (error) {
-        console.error('Error sending invoice email:', error.response?.data || error.message);
         throw new Error(error.response?.data?.message || error.message);
     }
 };
 
 const createInvoice = async (customerName, email, amount, paymentType, userId, bookingId, reservation, fromAdmin) => {
     try {
-        console.log("In service:", customerName, email, amount, paymentType, userId, bookingId, reservation, fromAdmin);
         const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const numericAmount = parseFloat(amount);
         if (isNaN(numericAmount)) {
@@ -215,13 +211,11 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
             subject = 'Your Damage Deposit and Vehicle Invoice with Payment Link';
             body += ` You can make a payment here: ${paymentLink}`;
         }
-        console.log(paymentLink);
 
         await sendInvoiceByEmail(invoiceId, recipients, subject, body, true);
 
         return response.data;
     } catch (error) {
-        console.error('Error creating invoice:', error.response?.data || error.message);
         throw new Error(error.response?.data?.message || error.message);
     }
 };
