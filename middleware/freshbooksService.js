@@ -50,7 +50,6 @@ const createStripePaymentLink = async (amount, email, paymentType, userId, booki
 
 const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includePdf) => {
     try {
-        console.log(invoiceId)
         const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const headers = await getFreshBooksHeaders();
 
@@ -67,7 +66,7 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
         };
 
         const response = await axios.put(
-            `https://api.freshbooks.com/accounting/account/AQ17OM/invoices/invoices/${invoiceId}`,
+            `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/invoices/invoices/${invoiceId}`,
             emailData,
             { headers }
         );
