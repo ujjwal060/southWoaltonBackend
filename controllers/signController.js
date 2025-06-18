@@ -196,9 +196,20 @@ exports.sendRentalAgreementEmail = async (req, res) => {
         await s3.putObject(uploadParams);
         const fileUrl = `https://${AWS_S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileKey}`;
 
+         const lastEntry = await Sign.findOne().sort({ createdAt: -1 });
+        let lastNumber = 0;
+        if (lastEntry?.trackingNumber) {
+            const match = lastEntry.trackingNumber.match(/swe-(\d+)/);
+            if (match) {
+                lastNumber = parseInt(match[1], 10);
+            }
+        }
+        const trackingNumber = generateTrackingNumber(lastNumber);
+
         const signEntry = new Sign({
             userId,
             pdf: fileUrl,
+            trackingNumber
         });
         await signEntry.save();
 
@@ -236,3 +247,8 @@ exports.sendRentalAgreementEmail = async (req, res) => {
     }
 };
 
+function generateTrackingNumber(lastNumber) {
+    const nextNumber = lastNumber + 1;
+    const paddedNumber = String(nextNumber).padStart(4, '0');
+    return `swe-${paddedNumber}`;
+}

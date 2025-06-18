@@ -1,8 +1,8 @@
 const axios = require('axios');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')('sk_test_51QV6moK0VXG1vNgVGgBi3ANHg8T2CHBgWK4u7arXbBoPVFxl8vlNclrjVBxSW9flVwSd7V0Gw34EILll2BDxdfok000EPzr9Ds');
 const { getConfig } = require('../config');
 const booking = require("../models/checkoutModel")
-
+const reservationModel = require("../models/reserveModel");
 const getFreshBooksHeaders = async () => {
     const { ensureFreshBooksToken } = require('../controllers/authController');
     const accessToken = await ensureFreshBooksToken();
@@ -15,7 +15,7 @@ const getFreshBooksHeaders = async () => {
 
 const createStripePaymentLink = async (amount, email, paymentType, userId, bookingId, reservation, fromAdmin) => {
     try {
-        const stripe = await getConfig('STRIPE_SECRET_KEY');
+        // const stripe = await getConfig('STRIPE_SECRET_KEY');
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
@@ -42,13 +42,12 @@ const createStripePaymentLink = async (amount, email, paymentType, userId, booki
 
         return session.url;
     } catch (error) {
-        console.error('Error creating Stripe payment link:', error.message);
         throw new Error('Failed to create payment link.');
     }
 };
 
 
-const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includePdf = false) => {
+const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includePdf) => {
     try {
         const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const headers = await getFreshBooksHeaders();
@@ -57,7 +56,7 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
             invoice: {
                 action_email: true,
                 email_recipients: recipients,
-                email_include_pdf: includePdf,
+                email_include_pdf: true,
                 invoice_customized_email: {
                     subject,
                     body,
@@ -71,17 +70,14 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
             { headers }
         );
 
-        console.log('Invoice email sent successfully:', response.data);
         return response.data;
     } catch (error) {
-        console.error('Error sending invoice email:', error.response?.data || error.message);
         throw new Error(error.response?.data?.message || error.message);
     }
 };
 
 const createInvoice = async (customerName, email, amount, paymentType, userId, bookingId, reservation, fromAdmin) => {
     try {
-        console.log("In service:", customerName, email, amount, paymentType, userId, bookingId, reservation, fromAdmin);
         const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const numericAmount = parseFloat(amount);
         if (isNaN(numericAmount)) {
@@ -102,6 +98,8 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
 
 
         const headers = await getFreshBooksHeaders();
+        const bookingData = await booking.findById(bookingId).select('reservationId');
+        const reservationData = await reservationModel.findById(bookingData.reservationId);
 
         const floridaTaxRate = 0.07;
         const convenienceFeeRate = 0.05;
@@ -115,20 +113,33 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
         if (paymentType === "Reservation") {
             const reservationPrice = 100;
             const balanceAmount = numericAmount;
+            const today = new Date();
+            const bookingDateObj = new Date(reservationData.pickdate);
+
+            const isSameDay =
+                today.getFullYear() === bookingDateObj.getFullYear() &&
+                today.getMonth() === bookingDateObj.getMonth() &&
+                today.getDate() === bookingDateObj.getDate();
+
             const totalBeforeFees = reservationPrice + balanceAmount;
 
-            onlineConvenienceFee = totalBeforeFees * convenienceFeeRate;
+            onlineConvenienceFee = balanceAmount * convenienceFeeRate;
             taxableAmount = totalBeforeFees + onlineConvenienceFee;
 
-            lines.push(
-                {
-                    name: 'Reservation Price',
-                    description: 'Flat reservation fee',
-                    qty: 1,
-                    unit_cost: { amount: reservationPrice, currency: 'USD' },
+            const reservationLine = {
+                name: 'Reservation Price',
+                description: 'Flat reservation fee',
+                qty: 1,
+                unit_cost: { amount: reservationPrice, currency: 'USD' },
+                ...(isSameDay && {
                     taxName1: "Florida Tax",
                     taxAmount1: floridaTaxRate * 100
-                },
+                })
+            };
+
+
+            lines.push(
+                reservationLine,
                 {
                     name: 'Balance Amount',
                     description: 'Remaining balance for your reservation',
@@ -200,13 +211,11 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
             subject = 'Your Damage Deposit and Vehicle Invoice with Payment Link';
             body += ` You can make a payment here: ${paymentLink}`;
         }
-        console.log(paymentLink);
 
         await sendInvoiceByEmail(invoiceId, recipients, subject, body, true);
 
         return response.data;
     } catch (error) {
-        console.error('Error creating invoice:', error.response?.data || error.message);
         throw new Error(error.response?.data?.message || error.message);
     }
 };

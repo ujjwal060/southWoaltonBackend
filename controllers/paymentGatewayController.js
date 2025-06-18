@@ -18,16 +18,6 @@ const createCheckoutSession = async (req, res) => {
         const bookingData=await bookingModel.findById(bookingId).select('reservationId');
         const reservationData=await reservationModel.findById(bookingData.reservationId);
 
-        // const reservationAmount = 100;
-        // const reservationTax = reservationAmount * 0.07; 
-        // // const reservationFee = reservationAmount * 0.05; 
-        // const reservationPrice = reservationAmount + reservationTax;
-
-        // const vehicleRental = amountInDollars - reservationPrice;
-        // const vehiclePrice = vehicleRental / 1.12; 
-        // const vehicleTax = vehiclePrice * 0.07;
-        // const vehicleFee = vehiclePrice * 0.05;
-
         const reservationAmount = 100;
 
         const today = new Date();
