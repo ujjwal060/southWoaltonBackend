@@ -48,8 +48,9 @@ const createStripePaymentLink = async (amount, email, paymentType, userId, booki
 };
 
 
-const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includePdf = false) => {
+const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includePdf) => {
     try {
+        console.log(111,includePdf)
         const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const headers = await getFreshBooksHeaders();
 
@@ -57,7 +58,7 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
             invoice: {
                 action_email: true,
                 email_recipients: recipients,
-                // email_include_pdf: true,
+                email_include_pdf: true,
                 invoice_customized_email: {
                     subject,
                     body,
