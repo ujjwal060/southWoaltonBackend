@@ -217,7 +217,7 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
         }
         console.log(paymentLink);
 
-        await sendInvoiceByEmail(invoiceId, recipients, subject, body, false);
+        await sendInvoiceByEmail(invoiceId, recipients, subject, body, true);
 
         return response.data;
     } catch (error) {
