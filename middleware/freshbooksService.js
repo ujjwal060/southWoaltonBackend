@@ -55,9 +55,9 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
 
         const emailData = {
             invoice: {
-                action_email: true,
+                // action_email: true,
                 email_recipients: recipients,
-                email_include_pdf: false,
+                email_include_pdf: includePdf,
                 invoice_customized_email: {
                     subject,
                     body,
