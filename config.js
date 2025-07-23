@@ -5,6 +5,7 @@ dotenv.config();
 
 const ENV = process.env.NODE_ENV || 'development';
 const SECRET_NAME = 'south-voltana';
+    console.log(111,ENV);
 
 const secretsManager = new SecretsManagerClient({
    region: process.env.AWS_REGION || "us-east-1"
@@ -18,7 +19,6 @@ async function fetchSecretsFromAWS() {
     const response = await secretsManager.send(command);
 
     const secrets = JSON.parse(response.SecretString);
-    console.log(111,secrets);
     return secrets;
   } catch (error) {
     console.error('Error fetching secrets from AWS:', error.message);
@@ -34,7 +34,7 @@ async function getConfig(key) {
   if (!secretsCache) {
     secretsCache = await fetchSecretsFromAWS();
   }
-
+console.log(333,secretsCache[key])
   return secretsCache[key] || process.env[key];
 }
 
