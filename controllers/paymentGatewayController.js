@@ -63,8 +63,8 @@ const createCheckoutSession = async (req, res) => {
                 },
             ],
             mode: "payment",
-            success_url: `http://18.209.91.97:8133/payment-successfully?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: "http://18.209.91.97:8133/cancel",
+            success_url: `http://98.85.246.54:8133/payment-successfully?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: "http://98.85.246.54:8133/cancel",
             metadata: {
                 userId,
                 bookingId,
