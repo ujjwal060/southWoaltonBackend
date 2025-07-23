@@ -18,7 +18,6 @@ async function fetchSecretsFromAWS() {
     const response = await secretsManager.send(command);
 
     const secrets = JSON.parse(response.SecretString);
-    console.log(111,secrets);
     return secrets;
   } catch (error) {
     console.error('Error fetching secrets from AWS:', error.message);
