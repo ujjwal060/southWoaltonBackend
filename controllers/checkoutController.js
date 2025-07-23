@@ -14,7 +14,7 @@ const uploadToS3 = async (file) => {
     const bucketName = await getConfig('AWS_S3_BUCKET_NAME');
     const accessKeyId = await getConfig('AWS_ACCESS_KEY_ID');
     const secretAccessKey = await getConfig('AWS_SECRET_ACCESS_KEY');
-
+console.log(222,bucketName, accessKeyId ,  secretAccessKey)
     const params = {
         Bucket: bucketName,
         Key: `uploads/${Date.now()}_${file.originalname}`,
