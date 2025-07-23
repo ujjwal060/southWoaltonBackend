@@ -3,9 +3,8 @@ const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client
 
 dotenv.config();
 
-const ENV = process.env.NODE_ENV || 'development';
+const ENV ='production';
 const SECRET_NAME = 'south-voltana';
-    console.log(111,ENV);
 
 const secretsManager = new SecretsManagerClient({
    region: process.env.AWS_REGION || "us-east-1"
@@ -34,7 +33,7 @@ async function getConfig(key) {
   if (!secretsCache) {
     secretsCache = await fetchSecretsFromAWS();
   }
-console.log(333,secretsCache[key])
+
   return secretsCache[key] || process.env[key];
 }
 
