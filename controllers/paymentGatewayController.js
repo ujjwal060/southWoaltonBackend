@@ -47,7 +47,6 @@ const createCheckoutSession = async (req, res) => {
                             description: `
                             Reservation Price: $${reservationPrice.toFixed(2)}
                               - Reservation Amount: $${reservationAmount.toFixed(2)}
-                              - Florida Tax (7%): $${reservationTax.toFixed(2)}
                             
                             Vehicle Rental: $${vehicleRental.toFixed(2)}
                               - Vehicle Price: $${vehiclePrice.toFixed(2)}
