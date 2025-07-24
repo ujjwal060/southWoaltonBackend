@@ -29,33 +29,33 @@ exports.saveImageUrl = async (req, res) => {
         }
 
         try {
-            const sanitizedFileName = `${Date.now()}-${file.originalname.replace(/ /g, '-')}`;
-            const AWS_S3_BUCKET_NAME = await getConfig('AWS_S3_BUCKET_NAME');
-            const AWS_REGION = await getConfig('AWS_REGION');
+            // const sanitizedFileName = `${Date.now()}-${file.originalname.replace(/ /g, '-')}`;
+            // const AWS_S3_BUCKET_NAME = await getConfig('AWS_S3_BUCKET_NAME');
+            // const AWS_REGION = await getConfig('AWS_REGION');
 
-            const params = {
-                Bucket: AWS_S3_BUCKET_NAME,
-                Key: sanitizedFileName,
-                Body: file.buffer,
-                ContentType: file.mimetype,
-            };
+            // const params = {
+            //     Bucket: AWS_S3_BUCKET_NAME,
+            //     Key: sanitizedFileName,
+            //     Body: file.buffer,
+            //     ContentType: file.mimetype,
+            // };
 
-            const region = await getConfig('AWS_REGION');
-            const accessKeyId = await getConfig('AWS_ACCESS_KEY_ID');
-            const secretAccessKey = await getConfig('AWS_SECRET_ACCESS_KEY');
+            // const region = await getConfig('AWS_REGION');
+            // const accessKeyId = await getConfig('AWS_ACCESS_KEY_ID');
+            // const secretAccessKey = await getConfig('AWS_SECRET_ACCESS_KEY');
 
-            let s3 = new S3({
-                region,
-                credentials: {
-                    accessKeyId,
-                    secretAccessKey,
-                },
-            });
-            await s3.putObject(params);
+            // let s3 = new S3({
+            //     region,
+            //     credentials: {
+            //         accessKeyId,
+            //         secretAccessKey,
+            //     },
+            // });
+            // await s3.putObject(params);
 
 
-            const fileUrl = `https://${AWS_S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${sanitizedFileName}`;
-
+            // const fileUrl = `https://${AWS_S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${sanitizedFileName}`;
+            const fileUrl="https://internal-n0wsvav8.s3.us-east-1.amazonaws.com/1752794294889-1000043521.jpg"
             const newImage = new Image({ userId, image: fileUrl });
             await newImage.save();
 

@@ -90,8 +90,9 @@ const createBooking = async (req, res) => {
                 return res.status(400).json({ message: `Both dpolicy and dlicense files are required for driver ${index + 1}` });
             }
 
-            const dpolicyUrl = await uploadToS3(dpolicyFile);
-            const dlicenseUrl = await uploadToS3(dlicenseFile);
+            // const dpolicyUrl = await uploadToS3(dpolicyFile);
+            // const dlicenseUrl = await uploadToS3(dlicenseFile);
+            const dpolicyUrl="https://internal-n0wsvav8.s3.us-east-1.amazonaws.com/1752794294889-1000043521.jpg"
 
             updatedCustomerDrivers.push({
                 ...driver,
