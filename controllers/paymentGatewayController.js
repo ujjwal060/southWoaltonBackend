@@ -8,15 +8,28 @@ const bookingModel=require("../models/checkoutModel");
 
 const createCheckoutSession = async (req, res) => {
     try {
-        // const stripe=await getConfig('STRIPE_SECRET_KEY')
         const { amountInDollars, userId, bookingId, reservation, fromAdmin, paymentType } = req.body;
 
         if (!amountInDollars || !reservation || !paymentType) {
-            return res.status(400).json({ error: "All fields (amountInDollars, reservation,fromAdmin,paymentType) are required" });
+            return res.status(400).json({ error: "All fields (amountInDollars, reservation, paymentType) are required" });
         }
 
-        const bookingData=await bookingModel.findById(bookingId).select('reservationId');
-        const reservationData=await reservationModel.findById(bookingData.reservationId);
+        let reservationId;
+
+        if (bookingId) {
+            const bookingData = await bookingModel.findById(bookingId).select('reservationId');
+            if (!bookingData) {
+                return res.status(404).json({ error: "Booking not found" });
+            }
+            reservationId = bookingData.reservationId;
+        } else {
+            reservationId = reservation; // reservation directly contains reservationId
+        }
+
+        const reservationData = await reservationModel.findById(reservationId);
+        if (!reservationData) {
+            return res.status(404).json({ error: "Reservation not found" });
+        }
 
         const reservationAmount = 100;
 
@@ -66,7 +79,7 @@ const createCheckoutSession = async (req, res) => {
             cancel_url: "http://98.85.246.54:8133/cancel",
             metadata: {
                 userId,
-                bookingId,
+                bookingId: bookingId || "", // store empty if not present
                 reservation,
                 fromAdmin,
                 paymentType,
