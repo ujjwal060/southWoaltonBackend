@@ -11,7 +11,7 @@ const createCheckoutSession = async (req, res) => {
         // const stripe=await getConfig('STRIPE_SECRET_KEY')
         const { amountInDollars, userId, bookingId, reservation, fromAdmin, paymentType } = req.body;
 
-        if (!amountInDollars || !reservation || !fromAdmin || !paymentType) {
+        if (!amountInDollars || !reservation || !paymentType) {
             return res.status(400).json({ error: "All fields (amountInDollars, reservation,fromAdmin,paymentType) are required" });
         }
 
@@ -50,7 +50,7 @@ const createCheckoutSession = async (req, res) => {
                             
                             Vehicle Rental: $${vehicleRental.toFixed(2)}
                               - Vehicle Price: $${vehiclePrice.toFixed(2)}
-                              - Florida Tax (7%): $${vehicleTax.toFixed(2)}
+                              - Florida Tax (7%): $${vehicleTax.toFixed(2)}             
                               - Online Convenience Fee (5%): $${vehicleFee.toFixed(2)}
                             
                             Total Amount: $${amountInDollars.toFixed(2)}
