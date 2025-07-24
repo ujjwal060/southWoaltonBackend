@@ -93,7 +93,7 @@ const createBooking = async (req, res) => {
             // const dpolicyUrl = await uploadToS3(dpolicyFile);
             // const dlicenseUrl = await uploadToS3(dlicenseFile);
             const dpolicyUrl="https://internal-n0wsvav8.s3.us-east-1.amazonaws.com/1752794294889-1000043521.jpg"
-
+            const dlicenseUrl="https://internal-n0wsvav8.s3.us-east-1.amazonaws.com/1752794294889-1000043521.jpg"
             updatedCustomerDrivers.push({
                 ...driver,
                 dpolicy: dpolicyUrl,
