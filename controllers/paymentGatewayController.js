@@ -67,8 +67,14 @@ const createCheckoutSession = async (req, res) => {
     let vehiclePrice = 0;
     let vehicleTax = 0;
     let vehicleFee = 0;
+    
     if (paymentType === "Booking") {
-      vehicleRental = amountInDollars - reservationAmount;
+      if (reservationData.bookingType === "Reservation") {
+        vehicleRental = amountInDollars - reservationAmount;
+      } else {
+        vehicleRental = amountInDollars;
+      }
+
       vehiclePrice = vehicleRental / 1.12;
       vehicleTax = vehiclePrice * 0.07;
       vehicleFee = vehiclePrice * 0.05;
