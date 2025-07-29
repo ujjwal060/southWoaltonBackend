@@ -33,8 +33,8 @@ const createStripePaymentLink = async (amount, email, paymentType, userId, booki
             ],
             mode: 'payment',
             customer_email: email,
-            success_url: `http://98.85.246.54:8133/payment-successfully?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `http://98.85.246.54:8133/cancel`,
+            success_url: `http://54.205.149.77:8133/payment-successfully?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `http://54.205.149.77:8133/cancel`,
             metadata: {
                 amount, email, paymentType, userId, bookingId, reservation, fromAdmin
             },
