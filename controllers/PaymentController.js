@@ -189,7 +189,7 @@ const completePayment = async (req, res) => {
 
         await newPayment.save();
 
-        if (paymentDetails.paymentType === "Reservation") {
+        // if (paymentDetails.paymentType === "Reservation") {
             const invoiceResponse = await createInvoice(
                 customerName,
                 customerEmail,
@@ -207,10 +207,10 @@ const completePayment = async (req, res) => {
 
             await recordPayment(customerEmail, paymentInfo.amount,customerName);
 
-        } else if (paymentDetails.paymentType === "Final") {
-            await recordPayment(customerEmail, paymentInfo.amount,customerName);
-            await sendWelcomeEmail(customerEmail);
-        }
+        // } else if (paymentDetails.paymentType === "Final") {
+        //     await recordPayment(customerEmail, paymentInfo.amount,customerName);
+        //     await sendWelcomeEmail(customerEmail);
+        // }
 
         res.status(200).json({
             success: true,
