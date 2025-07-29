@@ -67,7 +67,7 @@ const createCheckoutSession = async (req, res) => {
     let vehiclePrice = 0;
     let vehicleTax = 0;
     let vehicleFee = 0;
-    
+
     if (paymentType === "Booking") {
       if (reservationData.bookingType === "Reservation") {
         vehicleRental = amountInDollars - reservationAmount;
@@ -93,7 +93,7 @@ const createCheckoutSession = async (req, res) => {
       const includesReservation = amountInDollars > vehicleRental;
 
       description = `
-        Reservation Price: $${reservationPrice.toFixed(2)}
+        Reservation Price: $${reservationAmount.toFixed(2)}
         ${
           includesReservation
             ? `  - Reservation Amount: $${reservationAmount.toFixed(2)}\n`
