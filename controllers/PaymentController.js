@@ -184,6 +184,7 @@ const completePayment = async (req, res) => {
         const newPayment = new Payment({
             userId: paymentDetails.userId,
             bookingId: paymentDetails.bookingId,
+            reservationId: paymentDetails.reserveId,
             reservation: paymentDetails.reservation,
             fromAdmin: paymentDetails.fromAdmin,
             paymentType: paymentDetails.paymentType,
