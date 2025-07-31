@@ -203,7 +203,8 @@ const completePayment = async (req, res) => {
                 paymentDetails.userId,
                 paymentDetails.bookingId,
                 paymentDetails.reservation,
-                paymentDetails.fromAdmin
+                paymentDetails.fromAdmin,
+                paymentDetails.reservationId,
             );
 
             if (!invoiceResponse) {
@@ -212,7 +213,7 @@ const completePayment = async (req, res) => {
 
             await recordPayment(customerEmail, paymentInfo.amount,customerName);
 
-        } else if (paymentDetails.paymentType === "Final") {
+        } else if (paymentDetails.paymentType === "Booking") {
             await recordPayment(customerEmail, paymentInfo.amount,customerName);
             await sendWelcomeEmail(customerEmail);
         }

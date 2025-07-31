@@ -76,7 +76,7 @@ const sendInvoiceByEmail = async (invoiceId, recipients, subject, body, includeP
     }
 };
 
-const createInvoice = async (customerName, email, amount, paymentType, userId, bookingId, reservation, fromAdmin) => {
+const createInvoice = async (customerName, email, amount, paymentType, userId, bookingId, reservation, fromAdmin,reserveId) => {
     try {
         const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
         const numericAmount = parseFloat(amount);
@@ -96,10 +96,15 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
 
         const fullName = `${clientDetails.username}`;
 
-
+        let bookingData;
+        let reservationData;
         const headers = await getFreshBooksHeaders();
-        const bookingData = await booking.findById(bookingId).select('reservationId');
-        const reservationData = await reservationModel.findById(bookingData.reservationId);
+        if(paymentType=== "Booking" && bookingId) {
+        bookingData = await booking.findById(bookingId).select('reservationId');
+        reservationData = await reservationModel.findById(bookingData.reservationId);
+        }else{
+            reservationData = await reservationModel.findById(reserveId);
+        }
 
         const floridaTaxRate = 0.07;
         const convenienceFeeRate = 0.05;
@@ -156,7 +161,7 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
                 }
             );
 
-        } else if (paymentType === "Final") {
+        } else if (paymentType === "Booking") {
             damageDeposit = damageDepositBase;
             onlineConvenienceFee = damageDeposit * convenienceFeeRate;
             taxableAmount = damageDeposit + onlineConvenienceFee;
@@ -194,11 +199,21 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
 
         const invoiceId = response.data.response.result.invoice.invoiceid;
         const invoiceNumber=response.data.response.result.invoice.invoice_number;
-        await booking.findByIdAndUpdate(
+
+        if(paymentType=== "Booking" && bookingId) {
+             await booking.findByIdAndUpdate(
             bookingId,
             { $set: { invoiceId,invoiceNumber } },
             { new: true }
         );
+        }else{
+             await reservationModel.findByIdAndUpdate(
+            reserveId,
+            { $set: { invoiceId,invoiceNumber } },
+            { new: true }
+        );
+        }
+       
         const recipients = [email];
         let subject = 'Your Invoice Details';
         let body = `Thank you for your business, ${customerName}. Attached is your invoice.`;
