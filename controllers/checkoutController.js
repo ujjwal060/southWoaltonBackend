@@ -190,7 +190,7 @@ const bookingHistoryByUserId = async (req, res, next) => {
         );
     } catch (error) {
         console.error("Error fetching payment history:", error);
-        return next(createError(500, error:error.message || 'Internal Server Error'));
+        return next(createError(500, error.message || 'Internal Server Error'));
     }
 };
 
