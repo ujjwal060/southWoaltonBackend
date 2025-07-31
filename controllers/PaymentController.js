@@ -15,6 +15,9 @@ const emailService = require("../middleware/emailService");
 const PaymentInfo = async (req, res) => {
     try {
 
+        console.log(111,);
+        console.log(req.body);
+
         const createPayment = new Payment(req.body);
         const savedPayment = await createPayment.save();
         const updatedReservation = await Reserve.findByIdAndUpdate(
@@ -29,6 +32,7 @@ const PaymentInfo = async (req, res) => {
 
         res.status(201).json(savedPayment);
     } catch (error) {
+        console.error('Error creating payment:', error);
         res.status(400).json({ message: error.message });
     }
 };
