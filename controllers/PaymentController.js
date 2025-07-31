@@ -176,7 +176,7 @@ const completePayment = async (req, res) => {
         if (!customerName) {
             return res.status(400).json({ error: "Customer name is missing in the payment session." });
         }
-
+            console.log("Payment Details:", paymentDetails);
         const reservationDetails = await Reserve.findById(paymentDetails.reservation);
         if (!reservationDetails) {
             return res.status(404).json({ error: "Reservation details not found." });
