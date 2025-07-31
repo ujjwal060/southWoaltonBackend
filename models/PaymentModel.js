@@ -25,6 +25,10 @@ const paymentSchema = mongoose.Schema(
             type: String,
             require: false
         },
+         reservationId: {
+            type: String,
+            require: false
+        },
         amount: {
             type: String,
             require: false

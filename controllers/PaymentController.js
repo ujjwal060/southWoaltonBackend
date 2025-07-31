@@ -116,7 +116,6 @@ const sendInvoiceWithMail = async (req, res) => {
 
 const completePayment = async (req, res) => {
     try {
-        console.log(111);
         const sessionId = req.query.session_id;
 
         if (!sessionId) {
@@ -146,6 +145,7 @@ const completePayment = async (req, res) => {
             bookingId: session.metadata.bookingId,
             userId: session.metadata.userId,
             reservation: session.metadata.reservation,
+            reservationId: session.metadata.reservationId,
             fromAdmin: session.metadata.fromAdmin,
             paymentType: session.metadata.paymentType,
             amount: session.metadata.amountInDollars
@@ -176,8 +176,7 @@ const completePayment = async (req, res) => {
         if (!customerName) {
             return res.status(400).json({ error: "Customer name is missing in the payment session." });
         }
-            console.log("Payment Details:", paymentDetails);
-        const reservationDetails = await Reserve.findById(paymentDetails.reservation);
+        const reservationDetails = await Reserve.findById(paymentDetails.reservationId);
         if (!reservationDetails) {
             return res.status(404).json({ error: "Reservation details not found." });
         }
@@ -194,7 +193,7 @@ const completePayment = async (req, res) => {
 
         await newPayment.save();
 
-        // if (paymentDetails.paymentType === "Reservation") {
+        if (paymentDetails.paymentType === "Reservation") {
             const invoiceResponse = await createInvoice(
                 customerName,
                 customerEmail,
@@ -212,10 +211,10 @@ const completePayment = async (req, res) => {
 
             await recordPayment(customerEmail, paymentInfo.amount,customerName);
 
-        // } else if (paymentDetails.paymentType === "Final") {
-        //     await recordPayment(customerEmail, paymentInfo.amount,customerName);
-        //     await sendWelcomeEmail(customerEmail);
-        // }
+        } else if (paymentDetails.paymentType === "Final") {
+            await recordPayment(customerEmail, paymentInfo.amount,customerName);
+            await sendWelcomeEmail(customerEmail);
+        }
 
         res.status(200).json({
             success: true,
@@ -224,7 +223,6 @@ const completePayment = async (req, res) => {
             data: newPayment,
         });
     } catch (error) {
-        console.log(222);
         console.error("Error in completing the payment:", error.message);
         res.status(500).json({
             success: false,
