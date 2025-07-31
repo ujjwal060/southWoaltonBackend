@@ -116,6 +116,7 @@ const sendInvoiceWithMail = async (req, res) => {
 
 const completePayment = async (req, res) => {
     try {
+        console.log(111);
         const sessionId = req.query.session_id;
 
         if (!sessionId) {
@@ -223,6 +224,7 @@ const completePayment = async (req, res) => {
             data: newPayment,
         });
     } catch (error) {
+        console.log(222);
         console.error("Error in completing the payment:", error.message);
         res.status(500).json({
             success: false,
