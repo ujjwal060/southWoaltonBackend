@@ -145,7 +145,7 @@ const completePayment = async (req, res) => {
             bookingId: session.metadata.bookingId,
             userId: session.metadata.userId,
             reservation: session.metadata.reservation,
-            reservationId: session.metadata.reservationId,
+            reservationId: session.metadata.reserveId,
             fromAdmin: session.metadata.fromAdmin,
             paymentType: session.metadata.paymentType,
             amount: session.metadata.amountInDollars
