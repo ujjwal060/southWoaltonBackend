@@ -142,7 +142,7 @@ const bookingHistoryByUserId = async (req, res, next) => {
 
                 const reservationDetails = payment.reservation
                     ? await Reservation.findOne(
-                        { _id: payment.reservation,paymentType:"Reservation" },
+                        { _id: payment.reservationId,paymentType:"Reservation" },
                         'pickdate dropdate days pickup drop vehicleId'
                     )
                     : null;
