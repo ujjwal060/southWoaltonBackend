@@ -126,58 +126,140 @@ const createBooking = async (req, res) => {
     }
 };
 
+// const bookingHistoryByUserId = async (req, res, next) => {
+//     const { userId } = req.params;
+//     const { page = 1, limit = 10, search = "" } = req.query;
+//     try {
+//         const payments = await Payment.find({ userId })
+//             .select('amount bookingId reservation')
+//             .sort({ createdAt: -1 });
+
+//         const filteredPayments = await Promise.all(
+//             payments.map(async (payment) => {
+//                 const bookingDetails = payment.bookingId
+//                     ? await Bookform.findOne({ _id: payment.bookingId })
+//                     : null;
+
+//                 const reservationDetails = payment.reservation
+//                     ? await Reservation.findOne(
+//                         { _id: payment.reservation },
+//                         'pickdate dropdate days pickup drop vehicleId'
+//                     )
+//                     : null;
+
+//                 let vehicleDetails = null;
+//                 if (reservationDetails && reservationDetails.vehicleId) {
+//                     vehicleDetails = await Vehicle.findOne(
+//                         { _id: reservationDetails.vehicleId },
+//                         'vname image tagNumber'
+//                     );
+//                 }
+
+//                 return {
+//                     amount: payment.amount,
+//                     bookingDetails,
+//                     reservationDetails: reservationDetails
+//                         ? {
+//                             ...reservationDetails._doc,
+//                             vehicleDetails,
+//                         }
+//                         : null,
+//                 };
+//             })
+//         );
+
+//         const searchedPayments = filteredPayments.filter((payment) => {
+//             const vname = payment.reservationDetails?.vehicleDetails?.vname || "";
+//             return vname.toLowerCase().includes(search.toLowerCase());
+//         });
+
+//         const total = searchedPayments.length;
+//         const totalPages = Math.ceil(total / limit);
+
+//         const startIndex = (page - 1) * limit;
+//         const paginatedPayments = searchedPayments.slice(startIndex, startIndex + parseInt(limit));
+
+//         return next(
+//             createSuccess(200, "History by userId", {
+//                 total,
+//                 page: parseInt(page),
+//                 limit: parseInt(limit),
+//                 totalPages,
+//                 data: paginatedPayments,
+//             })
+//         );
+//     } catch (error) {
+//         console.error("Error fetching payment history:", error);
+//         return next(createError(500, error.message || 'Internal Server Error'));
+//     }
+// };
+
+
 const bookingHistoryByUserId = async (req, res, next) => {
     const { userId } = req.params;
     const { page = 1, limit = 10, search = "" } = req.query;
+
     try {
-        const payments = await Payment.find({ userId })
-            .select('amount bookingId reservation')
-            .sort({ createdAt: -1 });
+        const payments = await Payment.find({ userId }).sort({ createdAt: -1 });
 
-        const filteredPayments = await Promise.all(
-            payments.map(async (payment) => {
-                const bookingDetails = payment.bookingId
-                    ? await Bookform.findOne({ _id: payment.bookingId,paymentType:"Booking" })
-                    : null;
+        const bookings = [];
+        const reservations = [];
 
-                const reservationDetails = payment.reservation
-                    ? await Reservation.findOne(
-                        { _id: payment.reservationId,paymentType:"Reservation" },
-                        'pickdate dropdate days pickup drop vehicleId'
-                    )
-                    : null;
+        for (const payment of payments) {
+            const { amount, bookingId, reservationId, paymentType } = payment;
 
-                let vehicleDetails = null;
-                if (reservationDetails && reservationDetails.vehicleId) {
-                    vehicleDetails = await Vehicle.findOne(
-                        { _id: reservationDetails.vehicleId },
-                        'vname image tagNumber'
-                    );
-                }
+            const bookingDetails = bookingId
+                ? await Bookform.findById(bookingId).lean()
+                : null;
 
-                return {
-                    amount: payment.amount,
+            const reservationDetails = reservationId
+                ? await Reservation.findById(reservationId).lean()
+                : null;
+
+            if (!reservationDetails) continue;
+
+            let vehicleDetails = null;
+            if (reservationDetails.vehicleId) {
+                vehicleDetails = await Vehicle.findById(reservationDetails.vehicleId)
+                    .select("vname image tagNumber")
+                    .lean();
+            }
+
+            const commonData = {
+                amount,
+                reservationDetails: {
+                    ...reservationDetails,
+                    vehicleDetails,
+                },
+            };
+
+            if (paymentType === "Booking" && reservationDetails.bookingType === "Booking") {
+                bookings.push({
+                    ...commonData,
                     bookingDetails,
-                    reservationDetails: reservationDetails
-                        ? {
-                            ...reservationDetails._doc,
-                            vehicleDetails,
-                        }
-                        : null,
-                };
-            })
-        );
+                });
+            } else if (paymentType === "Reservation" && reservationDetails.bookingType === "Reservation") {
+                reservations.push(commonData);
+            }
+        }
 
-        const searchedPayments = filteredPayments.filter((payment) => {
-            const vname = payment.reservationDetails?.vehicleDetails?.vname || "";
+        // 🔍 Search filter on vehicle name
+        const filteredReservations = reservations.filter(r => {
+            const vname = r.reservationDetails?.vehicleDetails?.vname || "";
             return vname.toLowerCase().includes(search.toLowerCase());
         });
 
-        const total = searchedPayments.length;
-        const totalPages = Math.ceil(total / limit);
+        const filteredBookings = bookings.filter(b => {
+            const vname = b.reservationDetails?.vehicleDetails?.vname || "";
+            return vname.toLowerCase().includes(search.toLowerCase());
+        });
 
+        // 📄 Pagination only applied to reservations (you can change this)
+        const total = filteredReservations.length;
+        const totalPages = Math.ceil(total / limit);
         const startIndex = (page - 1) * limit;
-        const paginatedPayments = searchedPayments.slice(startIndex, startIndex + parseInt(limit));
+
+        const paginatedReservations = filteredReservations.slice(startIndex, startIndex + parseInt(limit));
 
         return next(
             createSuccess(200, "History by userId", {
@@ -185,12 +267,13 @@ const bookingHistoryByUserId = async (req, res, next) => {
                 page: parseInt(page),
                 limit: parseInt(limit),
                 totalPages,
-                data: paginatedPayments,
+                reservations: paginatedReservations,
+                bookings: filteredBookings,
             })
         );
     } catch (error) {
         console.error("Error fetching payment history:", error);
-        return next(createError(500, error.message || 'Internal Server Error'));
+        return next(createError(500, error.message || "Internal Server Error"));
     }
 };
 
