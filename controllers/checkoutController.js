@@ -137,12 +137,12 @@ const bookingHistoryByUserId = async (req, res, next) => {
         const filteredPayments = await Promise.all(
             payments.map(async (payment) => {
                 const bookingDetails = payment.bookingId
-                    ? await Bookform.findOne({ _id: payment.bookingId })
+                    ? await Bookform.findOne({ _id: payment.bookingId,paymentType:"Booking" })
                     : null;
 
                 const reservationDetails = payment.reservation
                     ? await Reservation.findOne(
-                        { _id: payment.reservation },
+                        { _id: payment.reservation,paymentType:"Reservation" },
                         'pickdate dropdate days pickup drop vehicleId'
                     )
                     : null;
