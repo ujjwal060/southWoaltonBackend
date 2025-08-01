@@ -113,6 +113,12 @@ const createBooking = async (req, res) => {
             reservationId:reservationId
         });
 
+        const findreservation = await Reservation.findById(reservationId);
+        if (findreservation?.bookingType==='Reservation') {
+           findreservation?.bookingType='Booking';
+           await findreservation.save();
+        }
+
         const savedBooking = await booking.save();
 
         res.status(201).json({
