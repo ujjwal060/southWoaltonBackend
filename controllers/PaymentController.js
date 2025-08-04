@@ -15,9 +15,6 @@ const emailService = require("../middleware/emailService");
 const PaymentInfo = async (req, res) => {
     try {
 
-        console.log(111,);
-        console.log(req.body);
-
         const createPayment = new Payment(req.body);
         const savedPayment = await createPayment.save();
         const updatedReservation = await Reserve.findByIdAndUpdate(
