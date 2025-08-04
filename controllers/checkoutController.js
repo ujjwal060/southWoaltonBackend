@@ -1,4 +1,4 @@
-const { S3, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const Bookform = require("../models/checkoutModel");
 const Payment = require("../models/PaymentModel");
 const Reservation = require("../models/reserveModel");
@@ -14,7 +14,7 @@ const uploadToS3 = async (file) => {
   const bucketName = await getConfig("AWS_S3_BUCKET_NAME");
   const accessKeyId = await getConfig("AWS_ACCESS_KEY_ID");
   const secretAccessKey = await getConfig("AWS_SECRET_ACCESS_KEY");
-  console.log(222, bucketName, accessKeyId, secretAccessKey);
+  console.log(222, bucketName, accessKeyId, secretAccessKey,bucketName);
   const params = {
     Bucket: bucketName,
     Key: `uploads/${Date.now()}_${file.originalname}`,
@@ -23,11 +23,11 @@ const uploadToS3 = async (file) => {
   };
   const command = new PutObjectCommand(params);
 
-  let s3 = new S3({
-    region,
+  let s3 =  new S3Client({
+    region:"us-east-1",
     credentials: {
-      accessKeyId,
-      secretAccessKey,
+     accessKeyId: accessKeyId.trim(),
+    secretAccessKey: secretAccessKey.trim(),
     },
   });
 
