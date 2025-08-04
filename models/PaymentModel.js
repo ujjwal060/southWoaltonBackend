@@ -22,7 +22,7 @@ const paymentSchema = mongoose.Schema(
             require: false
         },
         reservation: {
-            type: String,
+            type: Boolean,
             require: false
         },
          reservationId: {
