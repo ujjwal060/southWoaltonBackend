@@ -61,7 +61,12 @@ const reserveSchema = mongoose.Schema(
     },
     vehicleAmount: {
       type: String,
-      require: false,
+      require: true,
+      default: null,
+    },
+    totalAmount: {
+      type: String,
+      require: true,
       default: null,
     },
     bookingType: {
