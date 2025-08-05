@@ -116,64 +116,42 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
         let taxableAmount = 0;
 
         if (paymentType === "Reservation") {
-            const reservationPrice = 100;
-            const balanceAmount = numericAmount;
-            const today = new Date();
-            const bookingDateObj = new Date(reservationData.pickdate);
+            const reservationPrice = parseFloat(reservationData.reserveAmount);
 
-            const isSameDay =
-                today.getFullYear() === bookingDateObj.getFullYear() &&
-                today.getMonth() === bookingDateObj.getMonth() &&
-                today.getDate() === bookingDateObj.getDate();
+            const floridaTax = parseFloat(reservationData.vehicleAmount) * floridaTaxRate;
+            const onlineConvenienceFee = parseFloat(reservationData.vehicleAmount) * convenienceFeeRate;
 
-            const totalBeforeFees = reservationPrice + balanceAmount;
-
-            onlineConvenienceFee = balanceAmount * convenienceFeeRate;
-            taxableAmount = totalBeforeFees + onlineConvenienceFee;
-
-            const reservationLine = {
-                name: 'Reservation Price',
-                description: 'Flat reservation fee',
-                qty: 1,
-                unit_cost: { amount: reservationPrice, currency: 'USD' },
-                ...(isSameDay && {
-                    taxName1: "Florida Tax",
-                    taxAmount1: floridaTaxRate * 100
-                })
-            };
-
+            const totalWithTax = parseFloat(reservationData.vehicleAmount) + floridaTax + onlineConvenienceFee;
 
             lines.push(
-                reservationLine,
+            {
+            name: 'Reservation Payment',
+            description: `Reservation fee towards booking (Total: $${totalWithTax.toFixed(2)})`,
+            qty: 1,
+            unit_cost: { amount: reservationPrice, currency: 'USD' },
+            },
+            {
+            name: 'Due Amount',
+            description: 'Remaining balance + taxes + processing fee',
+            qty: 1,
+            unit_cost: { amount: totalWithTax - reservationPrice, currency: 'USD' },
+            }
+            );
+
+        } else if (paymentType === "Booking") {
+            const balanceAmount = numericAmount; // e.g., 375
+            const floridaTax = balanceAmount * floridaTaxRate; // 26.25
+            onlineConvenienceFee = balanceAmount * convenienceFeeRate; // 18.75
+            taxableAmount = balanceAmount + floridaTax + onlineConvenienceFee; // 420
+
+            lines.push(
                 {
                     name: 'Balance Amount',
                     description: 'Remaining balance for your reservation',
                     qty: 1,
                     unit_cost: { amount: balanceAmount, currency: 'USD' },
                     taxName1: "Florida Tax",
-                    taxAmount1: floridaTaxRate * 100
-                },
-                {
-                    name: 'Online Convenience Fee (5%)',
-                    description: 'Processing fee',
-                    qty: 1,
-                    unit_cost: { amount: onlineConvenienceFee, currency: 'USD' },
-                }
-            );
-
-        } else if (paymentType === "Booking") {
-            damageDeposit = damageDepositBase;
-            onlineConvenienceFee = damageDeposit * convenienceFeeRate;
-            taxableAmount = damageDeposit + onlineConvenienceFee;
-
-            lines.push(
-                {
-                    name: 'Damage Deposit',
-                    description: 'Security deposit for the vehicle',
-                    qty: 1,
-                    unit_cost: { amount: damageDeposit, currency: 'USD' },
-                    taxName1: "Florida Tax",
-                    taxAmount1: floridaTaxRate * 100
+                    taxAmount1: floridaTaxRate * 100 // This applies 7% to balanceAmount
                 },
                 {
                     name: 'Online Convenience Fee (5%)',

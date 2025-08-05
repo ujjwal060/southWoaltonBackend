@@ -191,7 +191,7 @@ const completePayment = async (req, res) => {
 
         await newPayment.save();
 
-        if (paymentDetails.paymentType === "Reservation") {
+        if (paymentDetails.paymentType === "Booking") {
             const invoiceResponse = await createInvoice(
                 customerName,
                 customerEmail,
@@ -210,7 +210,25 @@ const completePayment = async (req, res) => {
 
             await recordPayment(customerEmail, paymentInfo.amount,customerName);
 
-        } else if (paymentDetails.paymentType === "Booking") {
+        } else if (paymentDetails.paymentType === "Reservation") {
+            const invoiceResponse = await createInvoice(
+                customerName,
+                customerEmail,
+                reservationDetails.vehicleAmount,
+                paymentDetails.paymentType,
+                paymentDetails.userId,
+                paymentDetails.bookingId,
+                paymentDetails.reservation,
+                paymentDetails.fromAdmin,
+                paymentDetails.reservationId,
+            );
+
+            if (!invoiceResponse) {
+                throw new Error("Failed to create invoice in FreshBooks.");
+            }
+
+            await recordPayment(customerEmail, paymentInfo.amount,customerName);
+        }else{
             await recordPayment(customerEmail, paymentInfo.amount,customerName);
             await sendWelcomeEmail(customerEmail);
         }
