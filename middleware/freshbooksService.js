@@ -190,29 +190,26 @@ const createInvoice = async (
           unit_cost: { amount: onlineConvenienceFee, currency: "USD" },
         }
       );
-    } else if (paymentType === "reserveToBooking") {
-      const reservationAmount = 100;
-      const balanceAmount = numericAmount - reservationAmount;
-
-      const floridaTax = balanceAmount * floridaTaxRate;
-      const onlineConvenienceFee = balanceAmount * convenienceFeeRate;
-      const taxableAmount = balanceAmount + floridaTax + onlineConvenienceFee;
+    } else if (paymentType === "Final") {
+      damageDeposit = damageDepositBase;
+      onlineConvenienceFee = damageDeposit * convenienceFeeRate;
+      taxableAmount = damageDeposit + onlineConvenienceFee;
 
       lines.push(
         {
-          name: "Balance Amount",
-          description: `Remaining balance after reservation ($${reservationAmount} already paid)`,
+          name: "Damage Deposit",
+          description: "Security deposit for the vehicle",
           qty: 1,
-          unit_cost: { amount: balanceAmount, currency: "USD" },
-          taxName1: "Florida Tax",
-          taxAmount1: floridaTaxRate * 100,
+          unit_cost: { amount: damageDeposit, currency: "USD" },
+          // taxName1: "Florida Tax",
+          // taxAmount1: floridaTaxRate * 100,
         },
-        {
-          name: "Online Convenience Fee (5%)",
-          description: "Processing fee",
-          qty: 1,
-          unit_cost: { amount: onlineConvenienceFee, currency: "USD" },
-        }
+        // {
+        //   name: "Online Convenience Fee (5%)",
+        //   description: "Processing fee",
+        //   qty: 1,
+        //   unit_cost: { amount: onlineConvenienceFee, currency: "USD" },
+        // }
       );
     }
 

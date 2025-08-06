@@ -6,7 +6,7 @@ const stripeService = require("../controllers/paymentGatewayController");
 const mongoose = require('mongoose');
 const { createInvoice } = require('../middleware/freshbooksService');
 
-cron.schedule('0 0 * * *', async () => {
+cron.schedule('* * * * *', async () => {
     console.log('Cron job started:', new Date());
     try {
         const today = new Date();
@@ -17,13 +17,13 @@ cron.schedule('0 0 * * *', async () => {
         endDateUTC.setDate(todayUTC.getDate() + 21);
     
         const payments = await Payment.find({
-            paymentType: 'Reservation',
+            paymentType: 'Booking',
             mailSent: false,
         });
       
 
         const reservationIds = payments.map(payment =>
-            mongoose.Types.ObjectId.isValid(payment.reservation) ? new mongoose.Types.ObjectId(payment.reservation) : null
+            mongoose.Types.ObjectId.isValid(payment.reservationId) ? new mongoose.Types.ObjectId(payment.reservationId) : null
         ).filter(Boolean);
        
         const allReservations = await Reservation.find({ _id: { $in: reservationIds } });
@@ -39,7 +39,7 @@ cron.schedule('0 0 * * *', async () => {
        
 
         for (const payment of payments) {
-            const reservation = reservations.find(res => res._id.toString() === payment.reservation);
+            const reservation = reservations.find(res => res._id.toString() === payment.reservationId.toString());
             
             if (!reservation) continue;
 
