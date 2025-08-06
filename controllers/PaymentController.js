@@ -231,7 +231,25 @@ const completePayment = async (req, res) => {
 
             await recordPayment(invoiceId,paymentInfo.amount, clientId);
 
-        }else{
+        }else if( paymentDetails.paymentType === "reserveToBooking") {
+             const invoiceResponse = await createInvoice(
+                customerName,
+                customerEmail,
+                reservationDetails.vehicleAmount,
+                paymentDetails.paymentType,
+                paymentDetails.userId,
+                paymentDetails.bookingId,
+                paymentDetails.reservation,
+                paymentDetails.fromAdmin,
+                paymentDetails.reservationId,
+            );
+
+            const invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
+            const clientId = invoiceResponse?.response?.result?.invoice?.accountid;
+
+            await recordPayment(invoiceId,paymentInfo.amount, clientId);
+        }
+        else{
             await recordPayment(customerEmail, paymentInfo.amount,customerName);
             await sendWelcomeEmail(customerEmail);
         }

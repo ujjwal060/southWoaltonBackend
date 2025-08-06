@@ -158,6 +158,31 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
                     unit_cost: { amount: onlineConvenienceFee, currency: 'USD' },
                 }
             );
+        }else if( paymentType === "reserveToBooking") {
+            const reservationAmount = 100;
+    const balanceAmount = numericAmount - reservationAmount;
+
+    const floridaTax = balanceAmount * floridaTaxRate;
+    const onlineConvenienceFee = balanceAmount * convenienceFeeRate;
+    const taxableAmount = balanceAmount + floridaTax + onlineConvenienceFee;
+
+    lines.push(
+        {
+            name: 'Balance Amount',
+            description: `Remaining balance after reservation ($${reservationAmount} already paid)`,
+            qty: 1,
+            unit_cost: { amount: balanceAmount, currency: 'USD' },
+            taxName1: "Florida Tax",
+            taxAmount1: floridaTaxRate * 100
+        },
+        {
+            name: 'Online Convenience Fee (5%)',
+            description: 'Processing fee',
+            qty: 1,
+            unit_cost: { amount: onlineConvenienceFee, currency: 'USD' },
+        }
+    );
+            
         }
 
         const invoiceData = {

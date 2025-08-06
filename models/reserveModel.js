@@ -71,7 +71,7 @@ const reserveSchema = mongoose.Schema(
     },
     bookingType: {
       type: String,
-      enum: ["Reservation", "Booking"],
+      enum: ["Reservation", "Booking", "reserveToBooking"],
       required: true,
     },
     invoiceId: { type: Number },
