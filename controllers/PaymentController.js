@@ -208,7 +208,10 @@ const completePayment = async (req, res) => {
                 throw new Error("Failed to create invoice in FreshBooks.");
             }
 
-            await recordPayment(customerEmail, paymentInfo.amount,customerName);
+            const invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
+            const clientId = invoiceResponse?.response?.result?.invoice?.accountid;
+
+            await recordPayment(invoiceId,paymentInfo.amount, clientId);
 
         } else if (paymentDetails.paymentType === "Reservation") {
             const invoiceResponse = await createInvoice(

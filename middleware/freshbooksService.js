@@ -139,10 +139,10 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
             );
 
         } else if (paymentType === "Booking") {
-            const balanceAmount = numericAmount; // e.g., 375
-            const floridaTax = balanceAmount * floridaTaxRate; // 26.25
-            onlineConvenienceFee = balanceAmount * convenienceFeeRate; // 18.75
-            taxableAmount = balanceAmount + floridaTax + onlineConvenienceFee; // 420
+            const balanceAmount = numericAmount;
+            const floridaTax = balanceAmount * floridaTaxRate;
+            onlineConvenienceFee = balanceAmount * convenienceFeeRate;
+            taxableAmount = balanceAmount + floridaTax + onlineConvenienceFee;
 
             lines.push(
                 {
@@ -303,30 +303,10 @@ const exchangeAuthorizationCodeForToken = async (code) => {
 };
 
 
-const recordPayment = async (email, amount, customerName) => {
+const recordPayment = async (invoiceId,amount, clientId) => {
     try {
         const FRESHBOOKS_ACCOUNT_ID = await getConfig('FRESHBOOKS_ACCOUNT_ID');
-        if (!email || typeof email !== "string") {
-            throw new Error("Invalid email provided to recordPayment.");
-        }
-        if (!amount || typeof amount !== "number" || amount <= 0) {
-            throw new Error("Invalid amount provided to recordPayment.");
-        }
-
-        const clientId = await getClientId(email, customerName);
-        if (!clientId) {
-            throw new Error("Client ID is required but missing.");
-        }
-
         const headers = await getFreshBooksHeaders();
-
-
-        const invoiceResponse = await axios.get(
-            `https://api.freshbooks.com/accounting/account/${FRESHBOOKS_ACCOUNT_ID}/invoices/invoices?client_id=${clientId}`,
-            { headers }
-        );
-
-        const invoiceId = invoiceResponse.data.response.result.invoices[0]?.invoiceid;
 
         if (!invoiceId) {
             throw new Error("No invoice found for this client.");
@@ -335,10 +315,11 @@ const recordPayment = async (email, amount, customerName) => {
         const paymentData = {
             customerid: clientId,
             amount: {
-                amount,
+                amount: amount,
                 currency: "USD",
             },
             invoiceid: invoiceId,
+            type: "Other",
             date: new Date().toISOString().split("T")[0],
             payment_date: new Date().toISOString().split("T")[0],
             note: "Payment for Reservation transaction",
