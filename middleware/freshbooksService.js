@@ -116,25 +116,23 @@ const createInvoice = async (customerName, email, amount, paymentType, userId, b
         let taxableAmount = 0;
 
         if (paymentType === "Reservation") {
-            const reservationPrice = parseFloat(reservationData.reserveAmount);
-
-            const floridaTax = parseFloat(reservationData.vehicleAmount) * floridaTaxRate;
             const onlineConvenienceFee = parseFloat(reservationData.vehicleAmount) * convenienceFeeRate;
-
-            const totalWithTax = parseFloat(reservationData.vehicleAmount) + floridaTax + onlineConvenienceFee;
+            const balanceAmount = parseFloat(reservationData.vehicleAmount);
 
             lines.push(
-            {
-            name: 'Reservation Payment',
-            description: `Reservation fee towards booking (Total: $${totalWithTax.toFixed(2)})`,
-            qty: 1,
-            unit_cost: { amount: reservationPrice, currency: 'USD' },
+             {
+                name: 'Balance Amount',
+                description: 'Remaining balance for your reservation',
+                qty: 1,
+                unit_cost: { amount: balanceAmount, currency: 'USD' },
+                taxName1: "Florida Tax",
+                taxAmount1: floridaTaxRate * 100 
             },
             {
-            name: 'Due Amount',
-            description: 'Remaining balance + taxes + processing fee',
-            qty: 1,
-            unit_cost: { amount: totalWithTax - reservationPrice, currency: 'USD' },
+                name: 'Online Convenience Fee (5%)',
+                description: 'Processing fee',
+                qty: 1,
+                unit_cost: { amount: onlineConvenienceFee, currency: 'USD' },
             }
             );
 
