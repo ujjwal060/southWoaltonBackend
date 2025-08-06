@@ -26,7 +26,7 @@ const paymentSchema = mongoose.Schema(
             require: false
         },
          reservationId: {
-            type: mongoose.Schema.Types.ObjectId,,
+            type: mongoose.Schema.Types.ObjectId,
             require: false
         },
         amount: {
