@@ -34,7 +34,7 @@ const createCheckoutSession = async (req, res) => {
       }
 
       reservationData = await reservationModel.findById(reserveId);
-    } else if (paymentType === "Booking") {
+    } else if (paymentType === "Booking" || paymentType === "Both") {
       if (!bookingId) {
         return res
           .status(400)
@@ -107,6 +107,33 @@ const createCheckoutSession = async (req, res) => {
 
         Total Amount: $${amountInDollars.toFixed(2)}
             `;
+    }else if (paymentType === "Both") {
+      const vehiclePrice = parseInt(reservationData.vehicleAmount);
+
+    const includesReservation = amountInDollars > vehicleRental;
+    const alreadyPaid = reservationAmount;
+
+    const remainingVehicleRental = vehicleRental - alreadyPaid;
+
+    const taxablePrice = vehiclePrice - reservationAmount;
+    const vehicleTax = taxablePrice * 0.07;
+    const vehicleFee = taxablePrice * 0.05;
+
+    description = `
+        Reservation Price: $${reservationAmount.toFixed(2)}
+        ${
+          includesReservation
+            ? `  - Reservation Amount: $${reservationAmount.toFixed(2)}\n`
+            : ""
+        }
+
+        Vehicle Rental: $${remainingVehicleRental.toFixed(2)} (after $${alreadyPaid} already paid)
+        - Vehicle Price: $${vehiclePrice.toFixed(2)}
+        - Florida Tax (7%): $${vehicleTax.toFixed(2)}
+        - Online Convenience Fee (5%): $${vehicleFee.toFixed(2)}
+
+        Total Amount: $${amountInDollars.toFixed(2)}
+    `;
     }
 
     const session = await stripe.checkout.sessions.create({
