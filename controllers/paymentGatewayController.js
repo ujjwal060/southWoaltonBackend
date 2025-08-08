@@ -108,16 +108,17 @@ const createCheckoutSession = async (req, res) => {
         Total Amount: $${amountInDollars.toFixed(2)}
             `;
     }else if (paymentType === "Both") {
-      const vehiclePrice = parseInt(reservationData.vehicleAmount);
+        const vehicleRental = parseFloat(reservationData.vehicleAmount);
+    const alreadyPaid = parseFloat(reservationAmount);
 
     const includesReservation = amountInDollars > vehicleRental;
-    const alreadyPaid = reservationAmount;
 
-    const remainingVehicleRental = vehicleRental - alreadyPaid;
+    const vehicleTax = vehicleRental * 0.07;
+    const vehicleFee = vehicleRental * 0.05;
 
-    const taxablePrice = vehiclePrice - reservationAmount;
-    const vehicleTax = taxablePrice * 0.07;
-    const vehicleFee = taxablePrice * 0.05;
+    const totalWithTax = vehicleRental + vehicleTax + vehicleFee;
+
+    const finalPayable = totalWithTax - alreadyPaid;
 
     description = `
         Reservation Price: $${reservationAmount.toFixed(2)}
@@ -127,12 +128,14 @@ const createCheckoutSession = async (req, res) => {
             : ""
         }
 
-        Vehicle Rental: $${remainingVehicleRental.toFixed(2)} (after $${alreadyPaid} already paid)
-        - Vehicle Price: $${vehiclePrice.toFixed(2)}
+        Vehicle Rental: $${vehicleRental.toFixed(2)}
         - Florida Tax (7%): $${vehicleTax.toFixed(2)}
         - Online Convenience Fee (5%): $${vehicleFee.toFixed(2)}
 
-        Total Amount: $${amountInDollars.toFixed(2)}
+        Total (Before Reservation Minus): $${totalWithTax.toFixed(2)}
+        Reservation Already Paid: $${alreadyPaid.toFixed(2)}
+
+        Final Payable Now: $${finalPayable.toFixed(2)}
     `;
     }
 
