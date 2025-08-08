@@ -51,7 +51,7 @@ const paymentSchema = mongoose.Schema(
         },
         paymentType: {
             type: String,
-            enum: ["Reservation", "Booking"],
+            enum: ["Reservation", "Booking"," Both"],
             required: false,
         },
         mailSent: {
