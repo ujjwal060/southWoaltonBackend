@@ -23,11 +23,6 @@ const BookformSchema = new Schema({
     fromAdmin: { type: Boolean, default: false },
     invoiceId:{type:Number},
     invoiceNumber:{type:String},
-    reserveAmount: {
-      type: String,
-      require: false,
-      default: "0.00",
-    },
     customerDrivers: [CustomerDriverSchema]
 }, { timestamps: true });
 
