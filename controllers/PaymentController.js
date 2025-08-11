@@ -199,7 +199,7 @@ const completePayment = async (req, res) => {
             }
 
             invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
-            invoiceNumber = invoiceResponse?.response?.result?.invoice?.invoice_number;
+           invoiceNumber = invoiceResponse?.response?.result?.invoice?.invoice_number;
             const clientId = invoiceResponse?.response?.result?.invoice?.accountid;
 
             await recordPayment(invoiceId,paymentInfo.amount, clientId);
@@ -218,7 +218,7 @@ const completePayment = async (req, res) => {
             );
 
             invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
-            invoiceNumber = response.data.response.result.invoice.invoice_number;
+            invoiceNumber = invoiceResponse?.response?.result?.invoice?.invoice_number;
             const clientId = invoiceResponse?.response?.result?.invoice?.accountid;
 
             await recordPayment(invoiceId,paymentInfo.amount, clientId);
@@ -237,7 +237,7 @@ const completePayment = async (req, res) => {
             );
 
             invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
-            invoiceNumber = invoiceResponse?.response?.result?.invoice?.invoice_number;
+           invoiceNumber = invoiceResponse?.response?.result?.invoice?.invoice_number;
             const clientId = invoiceResponse?.response?.result?.invoice?.accountid;
 
             await recordPayment(invoiceId,paymentInfo.amount, clientId);
