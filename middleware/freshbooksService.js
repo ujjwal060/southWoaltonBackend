@@ -190,6 +190,39 @@ const createInvoice = async (
           unit_cost: { amount: onlineConvenienceFee, currency: "USD" },
         }
       );
+    } else if (paymentType === "Both") {
+      const fullVehicleAmount = numericAmount;
+      const reservationAmount = 100;
+      const floridaTax = fullVehicleAmount * floridaTaxRate;
+      const onlineConvenienceFee = fullVehicleAmount * convenienceFeeRate;
+
+      const totalWithTax =
+        fullVehicleAmount + floridaTax + onlineConvenienceFee;
+
+      const remainingBalance = totalWithTax - reservationAmount;
+
+      lines.push(
+        {
+          name: "Vehicle Amount",
+          description: "Total vehicle price before taxes",
+          qty: 1,
+          unit_cost: { amount: fullVehicleAmount, currency: "USD" },
+          taxName1: "Florida Tax",
+          taxAmount1: floridaTaxRate * 100,
+        },
+        {
+          name: "Online Convenience Fee",
+          description: `7% fee on $${fullVehicleAmount.toFixed(2)}`,
+          qty: 1,
+          unit_cost: { amount: onlineConvenienceFee, currency: "USD" },
+        },
+        {
+          name: "Reservation Paid",
+          description: "Amount already paid during reservation",
+          qty: 1,
+          unit_cost: { amount: -reservationAmount, currency: "USD" },
+        }
+      );
     } else if (paymentType === "Final") {
       damageDeposit = damageDepositBase;
       onlineConvenienceFee = damageDeposit * convenienceFeeRate;
@@ -203,7 +236,7 @@ const createInvoice = async (
           unit_cost: { amount: damageDeposit, currency: "USD" },
           // taxName1: "Florida Tax",
           // taxAmount1: floridaTaxRate * 100,
-        },
+        }
         // {
         //   name: "Online Convenience Fee (5%)",
         //   description: "Processing fee",
@@ -250,7 +283,7 @@ const createInvoice = async (
     let paymentLink = null;
 
     if (paymentType === "Final") {
-      const totalAmount =damageDeposit;
+      const totalAmount = damageDeposit;
       paymentLink = await createStripePaymentLink(
         totalAmount,
         email,
