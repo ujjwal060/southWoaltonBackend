@@ -275,8 +275,8 @@ const bookingHistoryByUserId = async (req, res, next) => {
       };
 
       if (
-        paymentType === "Booking" &&
-        reservationDetails.bookingType === "Booking"
+        paymentType === "Booking" || paymentType === "Both" &&
+        reservationDetails.bookingType === "Booking" || reservationDetails.bookingType === "Both"
       ) {
         bookings.push({
           ...commonData,
