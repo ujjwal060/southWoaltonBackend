@@ -168,163 +168,104 @@ const createBooking = async (req, res) => {
   }
 };
 
-// const bookingHistoryByUserId = async (req, res, next) => {
-//     const { userId } = req.params;
-//     const { page = 1, limit = 10, search = "" } = req.query;
-//     try {
-//         const payments = await Payment.find({ userId })
-//             .select('amount bookingId reservation')
-//             .sort({ createdAt: -1 });
-
-//         const filteredPayments = await Promise.all(
-//             payments.map(async (payment) => {
-//                 const bookingDetails = payment.bookingId
-//                     ? await Bookform.findOne({ _id: payment.bookingId })
-//                     : null;
-
-//                 const reservationDetails = payment.reservation
-//                     ? await Reservation.findOne(
-//                         { _id: payment.reservation },
-//                         'pickdate dropdate days pickup drop vehicleId'
-//                     )
-//                     : null;
-
-//                 let vehicleDetails = null;
-//                 if (reservationDetails && reservationDetails.vehicleId) {
-//                     vehicleDetails = await Vehicle.findOne(
-//                         { _id: reservationDetails.vehicleId },
-//                         'vname image tagNumber'
-//                     );
-//                 }
-
-//                 return {
-//                     amount: payment.amount,
-//                     bookingDetails,
-//                     reservationDetails: reservationDetails
-//                         ? {
-//                             ...reservationDetails._doc,
-//                             vehicleDetails,
-//                         }
-//                         : null,
-//                 };
-//             })
-//         );
-
-//         const searchedPayments = filteredPayments.filter((payment) => {
-//             const vname = payment.reservationDetails?.vehicleDetails?.vname || "";
-//             return vname.toLowerCase().includes(search.toLowerCase());
-//         });
-
-//         const total = searchedPayments.length;
-//         const totalPages = Math.ceil(total / limit);
-
-//         const startIndex = (page - 1) * limit;
-//         const paginatedPayments = searchedPayments.slice(startIndex, startIndex + parseInt(limit));
-
-//         return next(
-//             createSuccess(200, "History by userId", {
-//                 total,
-//                 page: parseInt(page),
-//                 limit: parseInt(limit),
-//                 totalPages,
-//                 data: paginatedPayments,
-//             })
-//         );
-//     } catch (error) {
-//         console.error("Error fetching payment history:", error);
-//         return next(createError(500, error.message || 'Internal Server Error'));
-//     }
-// };
-
 const bookingHistoryByUserId = async (req, res, next) => {
   const { userId } = req.params;
   const { page = 1, limit = 10, search = "" } = req.query;
 
-  try {
-    const payments = await Payment.find({ userId }).sort({ createdAt: -1 });
+ try {
+  const payments = await Payment.find({ userId }).sort({ createdAt: -1 });
 
-    const bookings = [];
-    const reservations = [];
+  const bookings = [];
+  const reservations = [];
+  const bothReservationIds = new Set();
 
-    for (const payment of payments) {
-      const { amount, bookingId, reservationId, paymentType } = payment;
+  for (const payment of payments) {
+    const { amount, bookingId, reservationId, paymentType } = payment;
 
-      const bookingDetails = bookingId
-        ? await Bookform.findById(bookingId).lean()
-        : null;
+    const bookingDetails = bookingId
+      ? await Bookform.findById(bookingId).lean()
+      : null;
 
-      const reservationDetails = reservationId
-        ? await Reservation.findById(reservationId).lean()
-        : null;
+    const reservationDetails = reservationId
+      ? await Reservation.findById(reservationId).lean()
+      : null;
 
-      if (!reservationDetails) continue;
+    if (!reservationDetails) continue;
 
-      let vehicleDetails = null;
-      if (reservationDetails.vehicleId) {
-        vehicleDetails = await Vehicle.findById(reservationDetails.vehicleId)
-          .select("vname image tagNumber")
-          .lean();
-      }
-
-      const commonData = {
-        amount,
-        reservationDetails: {
-          ...reservationDetails,
-          vehicleDetails,
-        },
-      };
-
-      if (
-        paymentType === "Booking" || paymentType === "Both" &&
-        reservationDetails.bookingType === "Booking" || reservationDetails.bookingType === "Both"
-      ) {
-        bookings.push({
-          ...commonData,
-          bookingDetails,
-        });
-      } else if (
-        paymentType === "Reservation" &&
-        reservationDetails.bookingType === "Reservation"
-      ) {
-        reservations.push(commonData);
-      }
+    let vehicleDetails = null;
+    if (reservationDetails.vehicleId) {
+      vehicleDetails = await Vehicle.findById(reservationDetails.vehicleId)
+        .select("vname image tagNumber")
+        .lean();
     }
 
-    // 🔍 Search filter on vehicle name
-    const filteredReservations = reservations.filter((r) => {
-      const vname = r.reservationDetails?.vehicleDetails?.vname || "";
-      return vname.toLowerCase().includes(search.toLowerCase());
-    });
+    const commonData = {
+      amount,
+      reservationDetails: {
+        ...reservationDetails,
+        vehicleDetails,
+      },
+    };
 
-    const filteredBookings = bookings.filter((b) => {
-      const vname = b.reservationDetails?.vehicleDetails?.vname || "";
-      return vname.toLowerCase().includes(search.toLowerCase());
-    });
+    if (paymentType === "Both") {
+      bothReservationIds.add(reservationId?.toString());
+    }
 
-    // 📄 Pagination only applied to reservations (you can change this)
-    const total = filteredReservations.length;
-    const totalPages = Math.ceil(total / limit);
-    const startIndex = (page - 1) * limit;
-
-    const paginatedReservations = filteredReservations.slice(
-      startIndex,
-      startIndex + parseInt(limit)
-    );
-
-    return next(
-      createSuccess(200, "History by userId", {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages,
-        reservations: paginatedReservations,
-        bookings: filteredBookings,
-      })
-    );
-  } catch (error) {
-    console.error("Error fetching payment history:", error);
-    return next(createError(500, error.message || "Internal Server Error"));
+    if (
+      (paymentType === "Booking" || paymentType === "Both") &&
+      (reservationDetails.bookingType === "Booking" || reservationDetails.bookingType === "Both")
+    ) {
+      bookings.push({
+        ...commonData,
+        bookingDetails,
+      });
+    } else if (
+      paymentType === "Reservation" &&
+      reservationDetails.bookingType === "Reservation"
+    ) {
+      reservations.push(commonData);
+    }
   }
+
+  const filteredReservations = reservations.filter(
+    (r) => !bothReservationIds.has(r.reservationDetails?._id?.toString())
+  );
+
+  const searchLower = search.toLowerCase();
+  const finalReservations = filteredReservations.filter((r) => {
+    const vname = r.reservationDetails?.vehicleDetails?.vname || "";
+    return vname.toLowerCase().includes(searchLower);
+  });
+
+  const finalBookings = bookings.filter((b) => {
+    const vname = b.reservationDetails?.vehicleDetails?.vname || "";
+    return vname.toLowerCase().includes(searchLower);
+  });
+
+  const total = finalReservations.length;
+  const totalPages = Math.ceil(total / limit);
+  const startIndex = (page - 1) * limit;
+
+  const paginatedReservations = finalReservations.slice(
+    startIndex,
+    startIndex + parseInt(limit)
+  );
+
+  return next(
+    createSuccess(200, "History by userId", {
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages,
+      reservations: paginatedReservations,
+      bookings: finalBookings,
+    })
+  );
+} catch (error) {
+  console.error("Error fetching payment history:", error);
+  return next(createError(500, error.message || "Internal Server Error"));
+}
+
 };
 
 module.exports = {
