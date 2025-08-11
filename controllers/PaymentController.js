@@ -178,18 +178,8 @@ const completePayment = async (req, res) => {
             return res.status(404).json({ error: "Reservation details not found." });
         }
 
-        const newPayment = new Payment({
-            userId: paymentDetails.userId,
-            bookingId: paymentDetails.bookingId,
-            reservationId: paymentDetails.reservationId,
-            reservation: paymentDetails.reservation,
-            fromAdmin: paymentDetails.fromAdmin,
-            paymentType: paymentDetails.paymentType,
-            amount: paymentDetails.amount,
-            paymentDetails: paymentInfo
-        });
-
-        await newPayment.save();
+        let invoiceId;
+        let invoiceNumber;
 
         if (paymentDetails.paymentType === "Booking") {
             const invoiceResponse = await createInvoice(
@@ -208,7 +198,8 @@ const completePayment = async (req, res) => {
                 throw new Error("Failed to create invoice in FreshBooks.");
             }
 
-            const invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
+            invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
+            invoiceNumber = invoiceResponse?.response?.result?.invoice?.invoice_number;
             const clientId = invoiceResponse?.response?.result?.invoice?.accountid;
 
             await recordPayment(invoiceId,paymentInfo.amount, clientId);
@@ -226,7 +217,8 @@ const completePayment = async (req, res) => {
                 paymentDetails.reservationId,
             );
 
-            const invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
+            invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
+            invoiceNumber = response.data.response.result.invoice.invoice_number;
             const clientId = invoiceResponse?.response?.result?.invoice?.accountid;
 
             await recordPayment(invoiceId,paymentInfo.amount, clientId);
@@ -244,7 +236,8 @@ const completePayment = async (req, res) => {
                 paymentDetails.reservationId,
             );
 
-            const invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
+            invoiceId = invoiceResponse?.response?.result?.invoice?.invoiceid;
+            invoiceNumber = invoiceResponse?.response?.result?.invoice?.invoice_number;
             const clientId = invoiceResponse?.response?.result?.invoice?.accountid;
 
             await recordPayment(invoiceId,paymentInfo.amount, clientId);
@@ -253,6 +246,21 @@ const completePayment = async (req, res) => {
             await recordPayment(customerEmail, paymentInfo.amount,customerName);
             await sendWelcomeEmail(customerEmail);
         }
+
+        const newPayment = new Payment({
+            userId: paymentDetails.userId,
+            bookingId: paymentDetails.bookingId,
+            reservationId: paymentDetails.reservationId,
+            reservation: paymentDetails.reservation,
+            fromAdmin: paymentDetails.fromAdmin,
+            paymentType: paymentDetails.paymentType,
+            amount: paymentDetails.amount,
+            paymentDetails: paymentInfo,
+            invoiceId: invoiceId,
+            invoiceNumber: invoiceNumber
+        });
+
+        await newPayment.save();
 
         res.status(200).json({
             success: true,
