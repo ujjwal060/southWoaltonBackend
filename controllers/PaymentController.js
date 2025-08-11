@@ -231,7 +231,7 @@ const completePayment = async (req, res) => {
 
             await recordPayment(invoiceId,paymentInfo.amount, clientId);
 
-        }else if( paymentDetails.paymentType === "reserveToBooking") {
+        }else if( paymentDetails.paymentType === "Both") {
              const invoiceResponse = await createInvoice(
                 customerName,
                 customerEmail,
