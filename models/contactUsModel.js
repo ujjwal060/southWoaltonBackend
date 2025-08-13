@@ -6,7 +6,13 @@ const ContactusSchema= new mongoose.Schema({
     },
     email:{
         type:String,
-        requiered:false
+        requiered:false,
+        validate: {
+        validator: function (v) {
+          return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(v);
+        },
+        message: (props) => `${props.value} is not a valid email!`,
+      },
     },
     startDate:{
         type:Date,
