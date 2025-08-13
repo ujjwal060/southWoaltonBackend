@@ -33,7 +33,7 @@ const signUp = async (req, res, next) => {
 
     return next(createSuccess(200, "User Registered Successfully"));
   } catch (error) {
-    return next(createError(500, "Something went wrong"));
+    return next(createError(500, error.message));
   }
 };
 
