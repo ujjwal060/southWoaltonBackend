@@ -37,7 +37,6 @@ const signUp = async (req, res, next) => {
   }
 };
 
-
 const login = async (req, res, next) => {
   try {
     const JWT_SECRET = await getConfig('JWT_SECRET');
@@ -61,8 +60,10 @@ const login = async (req, res, next) => {
     res.cookie("access_token", token, { httpOnly: true }).status(200).json({
       status: 200,
       message: "Login Success",
-      data: user,
-      token,
+      data: {
+        token,
+        userId: user._id
+      },
     });
   } catch (error) {
     return next(createError(500, "Something went wrong"));
@@ -155,8 +156,6 @@ const sendEmail = async (req, res, next) => {
   }
 };
 
-
-
 const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -185,8 +184,6 @@ const verifyOTP = async (req, res) => {
   }
 }
 
-
-
 const resetPassword = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -207,14 +204,12 @@ const resetPassword = async (req, res) => {
   }
 }
 
-
 const redirectToFreshBooks = async (req, res) => {
   const FRESHBOOKS_CLIENT_ID = await getConfig('FRESHBOOKS_CLIENT_ID');
   const FRESHBOOKS_REDIRECT_URI = await getConfig('FRESHBOOKS_REDIRECT_URI');
   const authUrl = `https://auth.freshbooks.com/oauth/authorize?client_id=${FRESHBOOKS_CLIENT_ID}&response_type=code&redirect_uri=${FRESHBOOKS_REDIRECT_URI}`;
   res.redirect(authUrl);
 };
-
 
 const connectFreshBooks = async (req, res) => {
   const { code, email } = req.query;
