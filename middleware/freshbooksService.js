@@ -162,8 +162,8 @@ const createInvoice = async (
           taxAmount1: floridaTaxRate * 100,
         },
         {
-          name: "Online Convenience Fee (5%)",
-          description: "Processing fee",
+          name: "Booking Fee (5%)",
+          // description: "Processing fee",
           qty: 1,
           unit_cost: { amount: onlineConvenienceFee, currency: "USD" },
         }
@@ -184,8 +184,8 @@ const createInvoice = async (
           taxAmount1: floridaTaxRate * 100,
         },
         {
-          name: "Online Convenience Fee (5%)",
-          description: "Processing fee",
+          name: "Booking Fee (5%)",
+          // description: "Processing fee",
           qty: 1,
           unit_cost: { amount: onlineConvenienceFee, currency: "USD" },
         }
@@ -211,8 +211,8 @@ const createInvoice = async (
           taxAmount1: floridaTaxRate * 100,
         },
         {
-          name: "Online Convenience Fee",
-          description: `7% fee on $${fullVehicleAmount.toFixed(2)}`,
+          name: "Booking Fee",
+          // description: `5% fee on ${fullVehicleAmount.toFixed(2)}`,
           qty: 1,
           unit_cost: { amount: onlineConvenienceFee, currency: "USD" },
         },
