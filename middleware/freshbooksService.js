@@ -211,7 +211,7 @@ const createInvoice = async (
           taxAmount1: floridaTaxRate * 100,
         },
         {
-          name: "Booking Fee",
+          name: "Booking Fee (5%)",
           // description: `5% fee on ${fullVehicleAmount.toFixed(2)}`,
           qty: 1,
           unit_cost: { amount: onlineConvenienceFee, currency: "USD" },
